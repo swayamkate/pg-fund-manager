@@ -597,6 +597,11 @@
     var monthNames = ["January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"];
 
+    /* Clear previous payment history render */
+    document.getElementById("payhist-card").style.display = "none";
+    document.getElementById("payhist-body").innerHTML = "";
+    document.getElementById("payhist-total").innerHTML = "";
+
     /* Gather data */
     var totalBeds = 0, occupiedBeds = 0, totalIncome = 0, totalDeposits = 0;
     var tenantRows = [];
@@ -693,12 +698,112 @@
      PUBLIC API
      ================================================================ */
 
+  /* Payment history render — full table with date, amount, UTR */
+  function renderPaymentHistory() {
+    var store = global.PGStore;
+    if (!store || !store.state) { return; }
+    var state = store.state();
+    var rooms = state.rooms || [];
+    var activeView = location.hash.slice(1) || 'dashboard';
+
+    var elCard = document.getElementById("payhist-card");
+    var elBody = document.getElementById("payhist-body");
+    var elCount = document.getElementById("payhist-count");
+    var elTotal = document.getElementById("payhist-total");
+    if (!elCard || !elBody) { return; }
+
+    /* Only render when rent tab is active */
+    if (activeView !== 'rent') {
+      elCard.style.display = "none";
+      return;
+    }
+
+    if (!rooms.length) {
+      elCard.style.display = "none";
+      return;
+    }
+    elCard.style.display = "block";
+
+    /* Build rows: one per month per tenant */
+    var rows = [];
+    var totalBill = 0;
+    var totalCollected = 0;
+    rooms.forEach(function (room) {
+      (room.beds || []).forEach(function (bed, i) {
+        if (!bed) return;
+        var months = store.ledger(room.id, i) || [];
+        var rent = bed.rent || room.rent || 0;
+        rent = Math.max(0, Number(rent || 0));
+        months.forEach(function (m) {
+          var info = (bed.paymentInfo && bed.paymentInfo[m.month]) || null;
+          var dateStr = info ? info.date : '';
+          var utrStr = info ? info.utr : '';
+          rows.push({
+            tenant: bed.name,
+            roomNo: room.no,
+            bedNo: store.bedLabel ? store.bedLabel(i, room.id) : (i + 1),
+            month: m.label,
+            monthKey: m.month,
+            paid: m.paid,
+            date: dateStr,
+            utr: utrStr,
+            amount: rent
+          });
+          if (m.paid) { totalCollected += rent; }
+          totalBill += rent;
+        });
+      });
+    });
+
+    rows.sort(function (a, b) {
+      var r = b.monthKey.localeCompare(a.monthKey);
+      return r !== 0 ? r : String(a.tenant).localeCompare(String(b.tenant));
+    });
+
+    if (!rows.length) {
+      elCard.style.display = "none";
+      return;
+    }
+
+    var esc = function (s) { return (s == null ? '' : String(s)).replace(/[&<>"\u00a0]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\u00a0': ' ' }[c];
+    });
+    };
+    var money = function (n) { return '₹' + (Number(n) || 0).toLocaleString('en-IN'); };
+
+    var html = '';
+    rows.forEach(function (r) {
+      var paidClass = r.paid ? 'ph-paid' : 'ph-unpaid';
+      var paidText = r.paid ? 'Paid' : 'Unpaid';
+      html += '<tr>' +
+        '<td class="ph-name">' + esc(r.tenant) + '</td>' +
+        '<td>' + esc(r.roomNo) + '</td>' +
+        '<td>' + esc(r.bedNo) + '</td>' +
+        '<td>' + esc(r.month) + '</td>' +
+        '<td><span class="' + paidClass + '">' + paidText + '</span></td>' +
+        '<td class="ph-date">' + esc(r.date) + '</td>' +
+        '<td class="ph-amount">' + money(r.amount) + '</td>' +
+        '<td class="ph-utr">' + esc(r.utr) + '</td>' +
+        '</tr>';
+    });
+
+    elBody.innerHTML = html;
+    elCount.textContent = rows.length + ' payment' + (rows.length !== 1 ? 's' : '') + ' recorded';
+
+    var outstanding = totalBill - totalCollected;
+    var totalHtml = '<span class="pht-current">Total due: <b>' + money(totalBill) + '</b></span>' +
+      '<span class="pht-collected">Collected: <b>' + money(totalCollected) + '</b></span>' +
+      '<span class="pht-outstanding">Outstanding: <b>' + money(outstanding) + '</b></span>';
+    elTotal.innerHTML = totalHtml;
+  }
+
   global.PGAnalytics = {
     renderHeatmap: renderHeatmap,
     renderPnL: renderPnL,
     renderRevenuePerRoom: renderRevenuePerRoom,
     renderPaymentBehavior: renderPaymentBehavior,
     renderStaffAttendance: renderStaffAttendance,
+    renderPaymentHistory: renderPaymentHistory,
     sendWhatsAppReminder: sendWhatsAppReminder,
     addStaff: addStaff,
     markAttendance: markAttendance,

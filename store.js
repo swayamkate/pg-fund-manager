@@ -128,11 +128,18 @@
     return !!bed && isArray(bed.paidMonths) && bed.paidMonths.indexOf(month) !== -1;
   }
 
-  function addMonth(bed, month) {
+  function addMonth(bed, month, paymentDate, utr) {
     if (!isArray(bed.paidMonths)) { bed.paidMonths = []; }
     if (bed.paidMonths.indexOf(month) !== -1) { return false; }
     bed.paidMonths.push(month);
     bed.paidMonths.sort();
+    if (paymentDate || utr) {
+      if (!bed.paymentInfo) { bed.paymentInfo = {}; }
+      bed.paymentInfo[month] = {
+        date: paymentDate || new Date().toISOString().slice(0, 10),
+        utr: utr || ""
+      };
+    }
     return true;
   }
 
@@ -140,6 +147,7 @@
     if (!isArray(bed.paidMonths)) { bed.paidMonths = []; return false; }
     var before = bed.paidMonths.length;
     bed.paidMonths = bed.paidMonths.filter(function (m) { return m !== month; });
+    if (bed.paymentInfo && bed.paymentInfo[month]) { delete bed.paymentInfo[month]; }
     return bed.paidMonths.length !== before;
   }
 
@@ -283,7 +291,8 @@
               workplace: clean(b.workplace, 60),
               onNotice: !!b.onNotice,
               paidMonths: months,
-              paid: months.indexOf(thisMonth()) !== -1
+              paid: months.indexOf(thisMonth()) !== -1,
+              paymentInfo: (b.paymentInfo && typeof b.paymentInfo === "object") ? b.paymentInfo : {}
             };
           })
         };
@@ -608,7 +617,7 @@
       return { ok: true };
     },
 
-    setPaid: function (roomId, bedIndex, paid) {
+    setPaid: function (roomId, bedIndex, paid, paymentDate, utr) {
       var target = room(roomId);
       var bed = target && target.beds[bedIndex];
       if (!bed) { return { ok: false, error: "That bed is empty." }; }
@@ -617,7 +626,7 @@
          two in step so nothing has to know which is the real record. */
       var month = thisMonth();
       bed.paid = !!paid;
-      if (bed.paid) { addMonth(bed, month); } else { dropMonth(bed, month); }
+      if (bed.paid) { addMonth(bed, month, paymentDate, utr); } else { dropMonth(bed, month); }
 
       if (bed.paid) {
         log("pay", "Rent received from " + bed.name,
@@ -730,18 +739,20 @@
       var rentAmt = effectiveRent(target, bed);
 
       return monthsBetween(from, to).map(function (m) {
-        return { month: m, label: monthLabel(m), paid: hasMonth(bed, m), rent: rentAmt };
+        var info = (bed.paymentInfo && bed.paymentInfo[m]) || null;
+        return { month: m, label: monthLabel(m), paid: hasMonth(bed, m), rent: rentAmt,
+          paymentDate: info ? info.date : null, utr: info ? info.utr : null };
       });
     },
 
     /* Settle or unsettle a single month, for fixing one mistake. */
-    setMonthPaid: function (roomId, bedIndex, month, paid) {
+    setMonthPaid: function (roomId, bedIndex, month, paid, paymentDate, utr) {
       var target = room(roomId);
       var bed = target && target.beds[bedIndex];
       if (!bed) { return { ok: false, error: "That bed is empty." }; }
       if (!isMonth(String(month))) { return { ok: false, error: "Pick a month." }; }
 
-      var changed = paid ? addMonth(bed, month) : dropMonth(bed, month);
+      var changed = paid ? addMonth(bed, month, paymentDate, utr) : dropMonth(bed, month);
       bed.paid = hasMonth(bed, thisMonth());
       if (changed) { save(); }
       return { ok: true, changed: changed };
@@ -750,7 +761,7 @@
     /* The catch-up button: every month from the joining date through to the
        date given is marked as taken. Months already settled are left alone,
        so pressing it twice is harmless. */
-    markPaidThrough: function (roomId, bedIndex, upto) {
+    markPaidThrough: function (roomId, bedIndex, upto, paymentDate, utr) {
       var target = room(roomId);
       var bed = target && target.beds[bedIndex];
       if (!bed) { return { ok: false, error: "That bed is empty." }; }
@@ -765,7 +776,7 @@
       if (!months.length) { return { ok: false, error: "There are no months in that range." }; }
 
       var changed = 0;
-      months.forEach(function (m) { if (addMonth(bed, m)) { changed++; } });
+      months.forEach(function (m) { if (addMonth(bed, m, paymentDate, utr)) { changed++; } });
       bed.paid = hasMonth(bed, thisMonth());
 
       var rentAmt = effectiveRent(target, bed);

@@ -79,6 +79,12 @@
             '<button class="btn-ghost" type="button" data-act="lg-run">Settle</button>' +
           '</div>' +
           '<p class="auth-error" id="lg-err" hidden></p>' +
+          '<div class="form-grid" style="margin-bottom:16px">' +
+            '<label class="field"><span>Payment date <i class="field-opt">optional</i></span>' +
+              '<input id="lg-paydate" type="date" /></label>' +
+            '<label class="field"><span>UTR / Transaction ID <i class="field-opt">optional</i></span>' +
+              '<input id="lg-utr" maxlength="40" placeholder="e.g. 123456789012" /></label>' +
+          '</div>' +
           '<div class="lg-grid" id="lg-months"></div>' +
           '<p class="lg-total" id="lg-total"></p>' +
           '<div class="dlg-foot">' +
@@ -114,6 +120,43 @@
 
   function render() {
     if (!ensureDom() || !store()) { return; }
+
+    /* Build full payment history table: one row per month per tenant */
+    function paymentHistory() {
+      var rows = [];
+      var totalBill = 0;
+      var totalCollected = 0;
+      store().state().rooms.forEach(function (room) {
+        room.beds.forEach(function (bed, i) {
+          if (!bed) { return; }
+          var months = store().ledger(room.id, i);
+          var rentAmt = store().effectiveRent ? store().effectiveRent(room, bed) : (bed.rent || room.rent || 0);
+          months.forEach(function (m) {
+            var info = (bed.paymentInfo && bed.paymentInfo[m.month]) || null;
+            var dateStr = info ? info.date : '';
+            var utrStr = info ? info.utr : '';
+            rows.push({
+              tenant: bed.name,
+              roomNo: room.no,
+              bedNo: store().bedLabel(i, room.id),
+              month: m.label,
+              monthKey: m.month,
+              paid: m.paid,
+              date: dateStr,
+              utr: utrStr,
+              amount: Math.max(0, Number(rentAmt || 0))
+            });
+            if (m.paid) { totalCollected += Number(rentAmt || 0); }
+            totalBill += Number(rentAmt || 0);
+          });
+        });
+      });
+      rows.sort(function (a, b) {
+        var r = b.monthKey.localeCompare(a.monthKey);
+        return r !== 0 ? r : String(a.tenant).localeCompare(String(b.tenant));
+      });
+      return { rows: rows, totalBill: totalBill, totalCollected: totalCollected };
+    }
 
     var due = store().outstanding();
     var rows = tenantRows();
@@ -221,10 +264,16 @@
 
     months.forEach(function (m) {
       if (m.paid) { paid++; } else { owed += Number(m.rent || 0); }
+      var tip = '';
+      if (m.paid && (m.paymentDate || m.utr)) {
+        tip = ' title="' + (m.paymentDate ? 'Paid: ' + esc(m.paymentDate) : '') +
+          (m.paymentDate && m.utr ? ' \u00b7 ' : '') +
+          (m.utr ? 'UTR: ' + esc(m.utr) : '') + '"';
+      }
       chips +=
         '<button class="lg-chip' + (m.paid ? ' is-paid' : '') + '" type="button" ' +
           'data-act="lg-month" data-m="' + esc(m.month) + '" ' +
-          'data-paid="' + (m.paid ? '1' : '0') + '">' + esc(m.label) + '</button>';
+          'data-paid="' + (m.paid ? '1' : '0') + '"' + tip + '>' + esc(m.label) + '</button>';
     });
 
     el("lg-months").innerHTML = chips ||
@@ -253,6 +302,8 @@
       (bed.collect ? ' \u00b7 collected on day ' + bed.collect : '');
 
     el("lg-upto").value = today();
+    el("lg-paydate").value = today();
+    el("lg-utr").value = "";
     hide("lg-err");
     paintLedger();
     el("dlg-ledger").showModal();
@@ -334,8 +385,10 @@
     if (act === "lg-month") {
       if (!viewing) { return; }
       var wasPaid = btn.getAttribute("data-paid") === "1";
+      var payDate = el("lg-paydate").value || today();
+      var utr = (el("lg-utr").value || "").trim();
       var out = store().setMonthPaid(viewing.roomId, viewing.bedIndex,
-        btn.getAttribute("data-m"), !wasPaid);
+        btn.getAttribute("data-m"), !wasPaid, !wasPaid ? payDate : null, !wasPaid ? utr : null);
       if (!out.ok) { show("lg-err", out.error || "Could not change that month."); return; }
       hide("lg-err");
       paintLedger();
@@ -345,7 +398,9 @@
 
     if (act === "lg-run") {
       if (!viewing) { return; }
-      var done = store().markPaidThrough(viewing.roomId, viewing.bedIndex, el("lg-upto").value);
+      var payDate2 = el("lg-paydate").value || today();
+      var utr2 = (el("lg-utr").value || "").trim();
+      var done = store().markPaidThrough(viewing.roomId, viewing.bedIndex, el("lg-upto").value, payDate2, utr2);
       if (!done.ok) { show("lg-err", done.error || "Could not settle those months."); return; }
       hide("lg-err");
       paintLedger();

@@ -290,7 +290,7 @@ html.auth-pending body{visibility:hidden}
     <div class="page-head">
       <div>
         <h1 id="rent-title">Rent</h1>
-        <p class="sub">Collection status for the current cycle.</p>
+        <p class="sub">Collection status and full payment history for the current cycle.</p>
       </div>
       <div class="head-actions">
         <button class="btn-ghost btn-sm" data-act="export-ledger" type="button">Export Ledger CSV</button>
@@ -301,6 +301,34 @@ html.auth-pending body{visibility:hidden}
     <div class="card">
       <div class="card-head"><h2>Payment log</h2></div>
       <ul class="paylist" id="paylist"></ul>
+    </div>
+    <div class="payhist-card" id="payhist-card">
+      <div class="card-head">
+        <h2>Payment history</h2>
+        <span class="muted-sm" id="payhist-count"></span>
+      </div>
+      <div class="table-card card">
+        <div class="table-scroll">
+          <table class="payhist-table" id="payhist-table">
+            <thead><tr>
+              <th>Tenant</th>
+              <th>Room</th>
+              <th>Bed</th>
+              <th>Month</th>
+              <th>Paid</th>
+              <th>Date</th>
+              <th>Amount (₹)</th>
+              <th>UTR / Transaction Ref</th>
+            </tr>
+          </thead>
+          <tbody id="payhist-body"></tbody>
+          <tfoot><tr>
+            <td colspan="7" class="payhist-total" id="payhist-total"></td>
+          </tr>
+          </tfoot>
+        </table>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -364,6 +392,7 @@ html.auth-pending body{visibility:hidden}
       </div>
       <div class="head-actions">
         <button class="btn-ghost btn-sm" data-act="rate-card" type="button">Rate card</button>
+        <button class="btn-ghost btn-sm" data-act="view-payment-history" type="button">Payment history</button>
         <button class="btn-primary btn-sm" data-act="edit-owner" type="button">Edit details</button>
       </div>
     </div>

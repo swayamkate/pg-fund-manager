@@ -151,7 +151,8 @@
         workplace: b.workplace || "",
         onNotice: b.on_notice || false,
         paidMonths: months,
-        paid: months.indexOf(thisMonth()) !== -1
+        paid: months.indexOf(thisMonth()) !== -1,
+        paymentInfo: b.payment_info || {}
       };
     });
 
@@ -256,7 +257,8 @@
             emergency_contact: bed.emergencyContact || "",
             workplace: bed.workplace || "",
             on_notice: bed.onNotice || false,
-            paid_months: bed.paidMonths || []
+            paid_months: bed.paidMonths || [],
+            payment_info: bed.paymentInfo || {}
           });
         } else {
           /* Vacant slot — keep the bed row alive in Supabase */

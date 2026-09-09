@@ -1225,8 +1225,9 @@ async function bulkMarkAllPaid() {
   if (!unpaid.length) { toast("All tenants are already marked as paid!", "info"); return; }
   var ok = await confirmAsync({ type: 'success', title: 'Mark all paid?', message: 'Mark ' + unpaid.length + ' tenant' + (unpaid.length !== 1 ? 's' : '') + ' as paid for this month?', okText: 'Mark paid', icon: '✓' });
   if (!ok) return;
+  var payDate = new Date().toISOString().slice(0, 10);
   unpaid.forEach((t) => {
-    PGStore.setPaid(t.roomId, t.bedIndex, true);
+    PGStore.setPaid(t.roomId, t.bedIndex, true, payDate, '');
   });
   commit();
   toast("Marked " + unpaid.length + " tenant" + (unpaid.length !== 1 ? "s" : "") + " as paid.", "success");
@@ -1334,7 +1335,7 @@ function renderAll() {
                 PGAnalytics.renderPaymentBehavior, PGAnalytics.renderPnL],
     beds:      [renderRooms],
     tenants:   [renderTenants],
-    rent:      [renderRent],
+    rent:      [renderRent, PGAnalytics.renderPaymentHistory],
     expenses:  [renderExpenses],
     complaints:[renderComplaints],
     owner:     [renderOwner, renderSettings, renderRates, applyFloorSetting,
@@ -1885,6 +1886,9 @@ document.addEventListener("click", (e) => {
     openSetRents();
   } else if (act === "rate-card") {
     openRateCard();
+  } else if (act === "view-payment-history") {
+    location.hash = "#rent";
+    global.setTimeout(function () { global.PGAnalytics && global.PGAnalytics.renderPaymentHistory && global.PGAnalytics.renderPaymentHistory(); }, 100);
   } else if (act === "add-rate") {
     closeDlg("dlg-rates");
     el("ra-label").value = "";
