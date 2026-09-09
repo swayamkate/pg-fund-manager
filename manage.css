@@ -377,7 +377,7 @@ button.bed-add:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .oa-green{background:var(--green-soft);color:var(--green)}
 .oa-blue{background:var(--brand-soft);color:var(--brand)}
 .oa-amber{background:var(--amber-soft);color:var(--amber)}
-.oa-purple{background:rgba(139,92,246,.15);color:#E63E36}
+.oa-purple{background:rgba(139,92,246,.15);color:#2563EB}
 .oa-red{background:var(--red-soft);color:var(--red)}
 .oa-text{display:flex;flex-direction:column;gap:3px;min-width:0}
 .oa-text b{font-size:14px;font-weight:600;line-height:1.3}

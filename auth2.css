@@ -33,7 +33,7 @@
 .auth2-orb--1 {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(255, 78, 69, .25) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, .25) 0%, transparent 70%);
   top: -15%;
   left: -10%;
   animation: a2-drift1 16s ease-in-out infinite;
@@ -42,7 +42,7 @@
 .auth2-orb--2 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(230, 80, 74, .18) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(129, 140, 248, .18) 0%, transparent 70%);
   bottom: -10%;
   right: -5%;
   animation: a2-drift2 20s ease-in-out infinite;
@@ -51,7 +51,7 @@
 .auth2-orb--3 {
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, rgba(200, 70, 65, .12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(56, 189, 248, .12) 0%, transparent 70%);
   top: 40%;
   left: 50%;
   animation: a2-drift3 14s ease-in-out infinite;
@@ -150,7 +150,7 @@
 }
 
 .auth2-gradient-text {
-  background: linear-gradient(135deg, #FF6B5E, #FF4E45, #FF6B5E, #E63E36);
+  background: linear-gradient(135deg, #60A5FA, #3B82F6, #60A5FA, #2563EB);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -203,8 +203,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 78, 69, .15);
-  color: #FF6B5E;
+  background: rgba(37, 99, 235, .15);
+  color: #60A5FA;
   flex-shrink: 0;
 }
 
@@ -254,7 +254,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #FF4E45, #FF6B5E, #E63E36, #FF4E45);
+  background: linear-gradient(90deg, #3B82F6, #60A5FA, #2563EB, #3B82F6);
   background-size: 200% 100%;
   animation: a2-gradient 4s ease infinite;
 }
@@ -385,14 +385,14 @@
 }
 
 .auth2-input-wrap input:focus {
-  border-color: #FF4E45;
-  box-shadow: 0 0 0 3px rgba(255,78,69,.15);
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
   background: rgba(255,255,255,.05);
 }
 
 .auth2-input-wrap input:focus ~ .auth2-input-icon,
 .auth2-input-wrap:has(input:focus) .auth2-input-icon {
-  color: #FF6B5E;
+  color: #60A5FA;
 }
 
 /* Password eye button */
@@ -498,7 +498,7 @@
   height: 52px;
   border-radius: 13px;
   border: none;
-  background: linear-gradient(135deg, #FF4E45, #E63E36);
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
   color: #fff;
   font-size: 15.5px;
   font-weight: 650;
@@ -530,7 +530,7 @@
 
 .auth2-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(255,78,69,.3);
+  box-shadow: 0 8px 24px rgba(37,99,235,.3);
 }
 
 .auth2-btn:active:not(:disabled) {
@@ -585,7 +585,7 @@
 }
 
 .auth2-alt a {
-  color: #FF6B5E;
+  color: #60A5FA;
   font-weight: 620;
   text-decoration: none;
   transition: color .2s;
@@ -644,13 +644,13 @@
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background: linear-gradient(135deg, #FF4E45, #E63E36);
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     animation: a2-scaleIn .5s ease both;
-    box-shadow: 0 0 32px rgba(255,78,69,.3);
+    box-shadow: 0 0 32px rgba(37,99,235,.3);
   }
 
   @keyframes a2-scaleIn {
@@ -858,15 +858,15 @@
 }
 
 [data-theme="light"] .auth2-orb--1 {
-  background: radial-gradient(circle, rgba(255,78,69,.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37,99,235,.1) 0%, transparent 70%);
 }
 
 [data-theme="light"] .auth2-orb--2 {
-  background: radial-gradient(circle, rgba(230,80,74,.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(129,140,248,.08) 0%, transparent 70%);
 }
 
 [data-theme="light"] .auth2-orb--3 {
-  background: radial-gradient(circle, rgba(200,70,65,.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(56,189,248,.06) 0%, transparent 70%);
 }
 
 [data-theme="light"] .auth2-panel {

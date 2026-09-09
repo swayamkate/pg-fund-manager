@@ -629,11 +629,11 @@
     var printHtml = '<!DOCTYPE html><html><head><title>PG Report - ' + s.property + '</title>';
     printHtml += '<style>';
     printHtml += 'body{font-family:Arial,sans-serif;padding:30px;color:#222;font-size:13px}';
-    printHtml += 'h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:20px 0 8px;border-bottom:2px solid #E63E36;padding-bottom:4px}';
+    printHtml += 'h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:20px 0 8px;border-bottom:2px solid #2563EB;padding-bottom:4px}';
     printHtml += '.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}';
     printHtml += '.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}';
     printHtml += '.scard{background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center}';
-    printHtml += '.scard .val{font-size:20px;font-weight:700;color:#E63E36;display:block}';
+    printHtml += '.scard .val{font-size:20px;font-weight:700;color:#2563EB;display:block}';
     printHtml += '.scard .lbl{font-size:11px;color:#666;text-transform:uppercase}';
     printHtml += 'table{width:100%;border-collapse:collapse;margin-bottom:16px}';
     printHtml += 'th{background:#f1f5f9;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #e5e7eb}';
