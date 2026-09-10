@@ -255,8 +255,9 @@ h2{font-size:16.5px;letter-spacing:-.018em;font-weight:650;line-height:1.35;marg
 .table tr:last-child td{border-bottom:0}
 .who{display:flex;align-items:center;gap:11px;font-weight:550}
 .av{
-  width:31px;height:31px;border-radius:50%;background:var(--surface-3);color:var(--muted);
+  width:31px;height:31px;border-radius:50%;background:var(--surface-2);color:var(--text);
   font-size:11.5px;font-weight:650;display:flex;align-items:center;justify-content:center;flex:none;
+  border:1px solid var(--border);
 }
 .mono{font-variant-numeric:tabular-nums;color:var(--muted)}
 
@@ -598,14 +599,29 @@ html{
   .dlg-wide{max-width:100vw}
 
   /* ---- DROPDOWN MENUS ---- */
+  .dd-wrap{position:relative;display:inline-block}
+  .dd-trigger{
+    appearance:none;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);cursor:pointer;font-size:16px;transition:background .12s ease, color .12s ease;
+  }
+  .dd-trigger:hover{background:var(--surface-3);color:var(--text)}
   .dd-menu{
-    right:-10px;min-width:200px;
+    position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    min-width:180px;padding:6px;z-index:1000;
     max-height:60vh;overflow-y:auto;
     -webkit-overflow-scrolling:touch;
-    border-radius:14px;
-    box-shadow:0 12px 40px rgba(0,0,0,.3);
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
   }
-  .dd-item{padding:12px 16px;font-size:14px;min-height:44px}
+  .dd-item{
+    display:block;width:100%;text-align:left;
+    padding:10px 14px;font-size:13.5px;font-weight:500;color:var(--text);cursor:pointer;
+    border-radius:8px;transition:background .1s ease;
+  }
+  .dd-item:hover{background:var(--surface-2)}
+  .dd-item:active{background:var(--surface-3)}
+  .dd-item.dd-danger{color:var(--red)}
+  .dd-divider{height:1px;background:var(--border);margin:4px 0}
 
   /* ---- SETUP CARD ---- */
   .setup{flex-direction:column;gap:12px;padding:16px}
