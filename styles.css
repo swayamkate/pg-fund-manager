@@ -124,15 +124,20 @@ body{
 
 /* ---------- tabs (desktop: sticky horizontal) ---------- */
 .tabs{position:sticky;top:66px;z-index:29;background:var(--bg);padding:16px 0 4px}
-.tabs-in{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px;width:fit-content;max-width:100%}
+.tabs-in{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px;width:100%;max-width:100%}
 .tabs-in::-webkit-scrollbar{display:none}
 .tab{
-  appearance:none;background:none;border:0;border-radius:9px;
-  padding:8px 16px;min-height:38px;font:inherit;font-size:14px;font-weight:550;
-  color:var(--muted);cursor:pointer;white-space:nowrap;transition:color .15s ease, background .15s ease;
+  appearance:none;background:transparent;border:0;border-radius:9px;
+  padding:9px 18px;min-height:40px;font:inherit;font-size:14px;font-weight:550;
+  color:var(--muted);cursor:pointer;white-space:nowrap;transition:color .15s ease, background .15s ease, transform .12s ease;
+  position:relative;
 }
-.tab:hover{color:var(--text)}
-.tab.is-active{color:var(--text);background:var(--surface);box-shadow:var(--shadow-sm), var(--hairline)}
+.tab:hover{color:var(--text);background:var(--surface-2)}
+.tab.is-active{color:var(--brand);background:var(--surface);box-shadow:var(--shadow-md), var(--hairline);transform:translateY(-1px)}
+.tab.is-active::after{
+  content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);
+  width:20px;height:3px;border-radius:99px;background:var(--brand);
+}
 .tab:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
 
 /* ---------- layout ---------- */
@@ -405,25 +410,25 @@ html{
   .tabs-in::-webkit-scrollbar{display:none}
   .tab{
     flex:1 1 0;min-width:0;padding:6px 0 8px;
-    min-height:56px;display:flex;flex-direction:column;
+    min-height:60px;display:flex;flex-direction:column;
     align-items:center;justify-content:center;gap:3px;
     border-radius:0;font-size:10px;font-weight:600;
     color:var(--faint);scroll-snap-align:center;
-    transition:color .15s ease;
+    transition:color .15s ease, background .15s ease;
     -webkit-tap-highlight-color:transparent;
     position:relative;
   }
   .tab::before{
-    content:"";display:block;width:22px;height:22px;
-    margin-bottom:1px;opacity:.45;transition:opacity .15s ease;
-    font-size:20px;line-height:1;text-align:center;
+    content:"";display:block;width:24px;height:24px;
+    margin-bottom:1px;opacity:.35;transition:opacity .15s ease, transform .15s ease;
+    font-size:22px;line-height:1;text-align:center;
   }
   .tab:hover{color:var(--muted)}
-  .tab.is-active{color:var(--brand);background:none}
-  .tab.is-active::before{opacity:1}
+  .tab.is-active{color:var(--brand);background:var(--brand-soft)}
+  .tab.is-active::before{opacity:1;transform:scale(1.1)}
   .tab.is-active::after{
     content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
-    width:24px;height:2px;border-radius:0 0 2px 2px;background:var(--brand);
+    width:28px;height:3px;border-radius:0 0 2px 2px;background:var(--brand);
   }
 
   /* Tab icons */
