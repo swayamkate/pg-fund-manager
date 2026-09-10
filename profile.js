@@ -226,7 +226,7 @@
       '<form class="pf-form" id="pf-form">' +
         '<h3>Edit ' + esc(bed.name) + '</h3>' +
         '<div class="form-grid">' +
-          '<label class="field span-2"><span>Full name</span>' +
+          '<label class="field span-3"><span>Full name</span>' +
             '<input id="pf-name" maxlength="60" value="' + esc(bed.name) + '" required /></label>' +
           '<label class="field"><span>Phone</span>' +
             '<input id="pf-phone" maxlength="24" value="' + esc(bed.phone || "") +
@@ -251,14 +251,14 @@
             '<input id="pf-emergency" maxlength="60" value="' + esc(bed.emergencyContact || "") + '" placeholder="Father: +91 98765 00000" /></label>' +
           '<label class="field"><span>Workplace / College</span>' +
             '<input id="pf-workplace" maxlength="60" value="' + esc(bed.workplace || "") + '" placeholder="e.g. Infosys / COEP" /></label>' +
-          '<label class="field"><span>Joining date</span>' +
+          '<label class="field span-2"><span>Joining date</span>' +
             '<input id="pf-joined" type="date" value="' + esc(dateValue(bed.joined)) + '" /></label>' +
           '<label class="field"><span>Leaving date</span>' +
             '<input id="pf-leaving" type="date" value="' + esc(dateValue(bed.leaving)) + '" /></label>' +
           '<label class="field"><span>Collection day</span>' +
             '<input id="pf-collect" type="number" min="1" max="31" value="' + esc(bed.collect || "") + '" placeholder="e.g. 5" /></label>' +
-          '<p class="hint span-2">Setting a custom rent applies only to ' + esc(bed.name) + '\u2019s bed. Leave blank to inherit Room ' + esc(room.no) + '\u2019s default of ' + money(room.rent) + '/mo.</p>' +
-          '<label class="field span-2"><span>Note</span>' +
+          '<p class="hint">Setting a custom rent applies only to ' + esc(bed.name) + '\u2019s bed. Leave blank to inherit Room ' + esc(room.no) + '\u2019s default of ' + money(room.rent) + '/mo.</p>' +
+          '<label class="field"><span>Note</span>' +
             '<textarea id="pf-note" maxlength="200" rows="3" ' +
             'placeholder="Deposit paid, food preference, parent\u2019s number\u2026">' +
             esc(bed.note || "") + '</textarea></label>' +
