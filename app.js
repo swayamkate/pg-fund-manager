@@ -1252,6 +1252,8 @@ function renderAll() {
   const isEmpty = PGStore.isEmpty();
   
   el("brand-prop").textContent = s.property || "Name your property";
+  const bpMobile = document.getElementById("brand-prop-mobile");
+  if (bpMobile) { bpMobile.textContent = s.property || "Name your property"; }
   el("setup").hidden = !isEmpty;
   
   /* Topbar — show property name on the button when set */
@@ -2221,7 +2223,11 @@ el("form-backfill").addEventListener("submit", (e) => {
 
 function show(view) {
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("is-active", v.id === "view-" + view));
-  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
+  document.querySelectorAll(".tab").forEach((t) => {
+    const active = t.dataset.view === view;
+    t.classList.toggle("is-active", active);
+    if (active) { t.setAttribute("aria-current", "page"); } else { t.removeAttribute("aria-current"); }
+  });
   /* Smooth scroll to top with momentum on mobile */
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

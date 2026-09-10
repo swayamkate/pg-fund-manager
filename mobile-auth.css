@@ -256,7 +256,7 @@
   }
 
   .auth-left h1 span {
-    background: linear-gradient(135deg, #60A5FA, #3B82F6, #60A5FA, #2563EB);
+    background: linear-gradient(135deg, #818CF8, #6366F1, #818CF8, #4F46E5);
     background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -309,8 +309,8 @@
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: rgba(37,99,235,.15);
-    color: #60A5FA;
+    background: rgba(99,102,241,.15);
+    color: #818CF8;
   }
 
   .auth-feature-text b {

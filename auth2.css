@@ -150,7 +150,7 @@
 }
 
 .auth2-gradient-text {
-  background: linear-gradient(135deg, #60A5FA, #3B82F6, #60A5FA, #2563EB);
+  background: linear-gradient(135deg, #818CF8, #6366F1, #818CF8, #4F46E5);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -203,8 +203,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(37, 99, 235, .15);
-  color: #60A5FA;
+  background: rgba(99, 102, 241, .15);
+  color: #818CF8;
   flex-shrink: 0;
 }
 
@@ -254,7 +254,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #3B82F6, #60A5FA, #2563EB, #3B82F6);
+  background: linear-gradient(90deg, #6366F1, #818CF8, #4F46E5, #6366F1);
   background-size: 200% 100%;
   animation: a2-gradient 4s ease infinite;
 }
@@ -385,14 +385,14 @@
 }
 
 .auth2-input-wrap input:focus {
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
   background: rgba(255,255,255,.05);
 }
 
 .auth2-input-wrap input:focus ~ .auth2-input-icon,
 .auth2-input-wrap:has(input:focus) .auth2-input-icon {
-  color: #60A5FA;
+  color: #818CF8;
 }
 
 /* Password eye button */
@@ -498,7 +498,7 @@
   height: 52px;
   border-radius: 13px;
   border: none;
-  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
   color: #fff;
   font-size: 15.5px;
   font-weight: 650;
@@ -585,7 +585,7 @@
 }
 
 .auth2-alt a {
-  color: #60A5FA;
+  color: #818CF8;
   font-weight: 620;
   text-decoration: none;
   transition: color .2s;
@@ -644,7 +644,7 @@
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    background: linear-gradient(135deg, #6366F1, #4F46E5);
     display: flex;
     align-items: center;
     justify-content: center;

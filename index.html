@@ -22,13 +22,13 @@
 <link rel="manifest" href="manifest.json" />
 <script>try{var t=localStorage.getItem("pgTheme");if(t){document.documentElement.dataset.theme=t;}}catch(e){}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PG Manager","url":"https://pg.swayamkate.com/","description":"Free PG & Hostel management app for beds, tenants, rent, expenses and analytics.","applicationCategory":"BusinessApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"},"featureList":["Bed & room management","Tenant tracking","Rent collection & payments","Expense tracking","Analytics & reports","Staff attendance"]}</script>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%232563EB'/%3E%3Cg fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 18v-8'/%3E%3Cpath d='M4 14h16v4'/%3E%3Cpath d='M20 14v-1.5a2 2 0 0 0-2-2h-7V14'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234F46E5'/%3E%3Cg fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 18v-8'/%3E%3Cpath d='M4 14h16v4'/%3E%3Cpath d='M20 14v-1.5a2 2 0 0 0-2-2h-7V14'/%3E%3C/g%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="styles.css?v=13" />
-<link rel="stylesheet" href="manage.css?v=13" />
-<link rel="stylesheet" href="analytics.css" />
+<link rel="stylesheet" href="styles.css?v=17" />
+<link rel="stylesheet" href="manage.css?v=17" />
+<link rel="stylesheet" href="analytics.css?v=17" />
 <style>
 html.auth-pending body{visibility:hidden}
 /* Loading skeleton — shown while JS boots */
@@ -90,47 +90,89 @@ html.auth-pending body{visibility:hidden}
 </head>
 <body>
 
-<header class="topbar">
-  <div class="wrap topbar-in">
-    <a class="brand" href="#dashboard">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18v-8"/><path d="M4 14h16v4"/><path d="M20 14v-1.5a2 2 0 0 0-2-2h-7V14"/></svg>
-      </span>
-      <span class="brand-text">
-        <strong>PG Manager</strong>
-        <small id="brand-prop">Your property</small>
-      </span>
-    </a>
-    <div class="topbar-right">
-      <button class="btn-ghost" data-act="name-property" type="button">Property name</button>
-      <span class="avatar" id="avatar" title="Owner">?</span>
-      <button class="icon-btn" data-act="rate-card" type="button" aria-label="Rate card" title="Rate card">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 4.8H4.8V12l8.6 8.6a1.7 1.7 0 0 0 2.4 0l4.8-4.8a1.7 1.7 0 0 0 0-2.4Z"/><circle cx="8.6" cy="8.6" r="1.1"/></svg>
-      </button>
-      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme" title="Switch colour theme">
-        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
-        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-      </button>
-      <button class="btn-ghost" id="logout" type="button">Log out</button>
-    </div>
-  </div>
-</header>
+<div class="app">
 
-<nav class="tabs" aria-label="Sections">
-  <div class="wrap">
-    <div class="tabs-in" id="tabs">
-      <button class="tab is-active" data-view="dashboard">Overview</button>
-      <button class="tab" data-view="beds">Beds</button>
-      <button class="tab" data-view="tenants">Tenants</button>
-      <button class="tab" data-view="rent">Rent</button>
-      <button class="tab" data-view="expenses">Expenses</button>
-      <button class="tab" data-view="complaints">Issues</button>
-      <button class="tab" data-view="owner">Owner</button>
-    </div>
-  </div>
-</nav>
+  <aside class="sidebar" aria-label="Sidebar">
+    <div class="sidebar-in">
+      <a class="brand" href="#dashboard">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18v-8"/><path d="M4 14h16v4"/><path d="M20 14v-1.5a2 2 0 0 0-2-2h-7V14"/></svg>
+        </span>
+        <span class="brand-text">
+          <strong>PG Manager</strong>
+          <small id="brand-prop">Your property</small>
+        </span>
+      </a>
 
-<main class="wrap" id="main">
+      <nav class="tabs" aria-label="Sections">
+        <div class="tabs-in" id="tabs">
+          <button class="tab is-active" data-view="dashboard" aria-current="page">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            <span>Overview</span>
+          </button>
+          <button class="tab" data-view="beds">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="M3 18h18"/><path d="M3 12v6"/><path d="M7 12v-3h6v3"/></svg>
+            <span>Beds</span>
+          </button>
+          <button class="tab" data-view="tenants">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+            <span>Tenants</span>
+          </button>
+          <button class="tab" data-view="rent">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+            <span>Rent</span>
+          </button>
+          <button class="tab" data-view="expenses">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h3"/></svg>
+            <span>Expenses</span>
+          </button>
+          <button class="tab" data-view="complaints">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4.2 4.2 0 0 1 3 3"/><path d="M14.7 3a9 9 0 0 1 6.3 6.3"/><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 8v4l3 2"/></svg>
+            <span>Issues</span>
+          </button>
+          <button class="tab" data-view="owner">
+            <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Owner</span>
+          </button>
+        </div>
+      </nav>
+
+      <div class="sidebar-foot">
+        <span class="dot dot-live" aria-hidden="true"></span>
+        <span>Saved in this browser</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="app-main">
+
+    <header class="topbar">
+      <div class="wrap topbar-in">
+        <a class="brand brand-mobile" href="#dashboard">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18v-8"/><path d="M4 14h16v4"/><path d="M20 14v-1.5a2 2 0 0 0-2-2h-7V14"/></svg>
+          </span>
+          <span class="brand-text">
+            <strong>PG Manager</strong>
+            <small id="brand-prop-mobile">Your property</small>
+          </span>
+        </a>
+        <div class="topbar-right">
+          <button class="btn-ghost" data-act="name-property" type="button">Property name</button>
+          <span class="avatar" id="avatar" title="Owner">?</span>
+          <button class="icon-btn" data-act="rate-card" type="button" aria-label="Rate card" title="Rate card">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 4.8H4.8V12l8.6 8.6a1.7 1.7 0 0 0 2.4 0l4.8-4.8a1.7 1.7 0 0 0 0-2.4Z"/><circle cx="8.6" cy="8.6" r="1.1"/></svg>
+          </button>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme" title="Switch colour theme">
+            <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+            <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          </button>
+          <button class="btn-ghost" id="logout" type="button">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap" id="main">
 
   <!-- OVERVIEW -->
   <section class="view is-active" id="view-dashboard">
@@ -480,12 +522,15 @@ html.auth-pending body{visibility:hidden}
 
 </main>
 
-<footer class="foot">
-  <div class="wrap foot-in">
-    <span>PG Manager · v1.0</span>
-    <span class="muted-sm">Your data is saved in this browser, per login</span>
-  </div>
-</footer>
+      <footer class="foot">
+        <div class="wrap foot-in">
+          <span>PG Manager · v1.0</span>
+          <span class="muted-sm">Your data is saved in this browser, per login</span>
+        </div>
+      </footer>
+
+    </div><!-- /app-main -->
+  </div><!-- /app -->
 
 <!-- ADD ROOM -->
 <dialog class="dlg" id="dlg-room">
@@ -530,8 +575,8 @@ html.auth-pending body{visibility:hidden}
     <h3>Add a tenant</h3>
     <div class="form-grid">
       <label class="field span-2"><span>Bed</span><select id="t-bed" required></select></label>
-      <label class="field span-2"><span>Full name</span><input id="t-name" maxlength="60" placeholder="Rohit Sharma" required /></label>
-      <label class="field"><span>Phone</span><input id="t-phone" maxlength="24" placeholder="+91 98765 43210" /></label>
+      <label class="field span-2"><span>Full name</span><input id="t-name" maxlength="60" autocomplete="name" placeholder="Rohit Sharma" required /></label>
+      <label class="field"><span>Phone</span><input id="t-phone" maxlength="24" autocomplete="tel" placeholder="+91 98765 43210" /></label>
       <label class="field"><span>Rent (₹/mo) <i class="field-opt">optional custom</i></span><input id="t-rent" type="number" min="0" step="100" placeholder="Default room rent" /></label>
       <label class="field"><span>Security deposit held (₹)</span><input id="t-deposit" type="number" min="0" step="100" placeholder="e.g. 10000" /></label>
       <label class="field"><span>ID document type</span>
@@ -667,8 +712,8 @@ html.auth-pending body{visibility:hidden}
   <form class="dlg-card" id="form-owner">
     <h3>Your details</h3>
     <div class="form-grid">
-      <label class="field span-2"><span>Your name</span><input id="o-name" maxlength="60" placeholder="Swayam Kate" required /></label>
-      <label class="field span-2"><span>Phone <i class="field-opt">optional</i></span><input id="o-phone" maxlength="24" placeholder="+91 98765 43210" /></label>
+      <label class="field span-2"><span>Your name</span><input id="o-name" maxlength="60" autocomplete="name" placeholder="Swayam Kate" required /></label>
+      <label class="field span-2"><span>Phone <i class="field-opt">optional</i></span><input id="o-phone" maxlength="24" autocomplete="tel" placeholder="+91 98765 43210" /></label>
       <label class="field span-2"><span>UPI ID for rent reminders <i class="field-opt">e.g. name@upi</i></span><input id="o-upi" maxlength="60" placeholder="owner@okaxis" /></label>
       <label class="field span-2"><span>Property address <i class="field-opt">optional</i></span><input id="o-address" maxlength="120" placeholder="Street, area, city" /></label>
       <label class="field span-2"><span>PG Starting Date <i class="field-opt">When did your PG start?</i></span><input id="o-pgdate" type="date" /></label>
