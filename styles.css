@@ -273,6 +273,33 @@ h2{font-size:16.5px;letter-spacing:-.018em;font-weight:650;line-height:1.35;marg
 .tcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;font-weight:550}
 .tcard-grid b{display:block;color:var(--faint);font-weight:550;font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
 
+/* ---------- tenant profile dialog ---------- */
+.dlg-profile .dlg-card{padding:0;border:none;background:var(--surface)}
+.pf-head{display:flex;align-items:center;gap:14px;padding:24px 24px 20px;border-bottom:1px solid var(--border)}
+.pf-av{width:48px;height:48px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-size:18px;font-weight:650;display:flex;align-items:center;justify-content:center;flex:none;border:1px solid color-mix(in srgb, var(--brand) 20%, transparent)}
+.pf-id{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.pf-id b{font-size:17px;font-weight:650;letter-spacing:-.01em}
+.pf-id span{color:var(--muted);font-size:13px}
+.pf-grid{padding:16px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px}
+.pf-cell{border-top:1px solid var(--border);padding-top:12px}
+.pf-cell b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:550;margin-bottom:5px}
+.pf-cell span{display:block;font-size:14px;font-weight:500;color:var(--text);line-height:1.4}
+.pf-cell span i{display:block;color:var(--muted);font-size:12px;font-style:normal;margin-top:2px}
+.pf-cell a{color:var(--brand);text-decoration:none}
+.pf-cell a:hover{text-decoration:underline}
+.pf-note{padding:0 24px 18px}
+.pf-note b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:550;margin-bottom:8px}
+.pf-note p{font-size:13.5px;color:var(--text);line-height:1.55;margin:0}
+.pf-blank{color:var(--muted);font-style:italic}
+.pf-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 24px;border-top:1px solid var(--border);background:var(--surface-2)}
+.pf-left{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.pf-foot .link-btn{min-height:36px;padding:8px 12px;font-size:12.5px;font-weight:500}
+.pf-foot .btn-ghost{min-height:36px;padding:8px 12px;font-size:12.5px}
+.pf-form{padding:24px}
+.pf-form h3{margin:0 0 18px;font-size:18px;font-weight:650}
+.pf-form .form-grid{gap:0 12px}
+.pf-form .hint span-2,.pf-form .field.span-2{flex:1 1 100%}
+
 /* ---------- rent list ---------- */
 .paylist{list-style:none;margin:0;padding:0}
 .paylist li{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-top:1px solid var(--border)}
@@ -556,6 +583,22 @@ html{
     min-height:52px;font-size:15px;border-radius:14px;
   }
   .icon-btn{width:44px;height:44px;border-radius:12px}
+
+  /* ---------- tenant profile (mobile) ---------- */
+  .pf-head{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+  .pf-av{width:42px;height:42px;font-size:15px}
+  .pf-id b{font-size:15px}
+  .pf-grid{grid-template-columns:1fr;gap:0;padding:0 16px}
+  .pf-cell{border-top:1px solid var(--border);padding:10px 0}
+  .pf-cell:first-child{border-top:0;padding-top:0}
+  .pf-note{padding:0 16px 12px}
+  .pf-foot{flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px}
+  .pf-left{flex-direction:column;gap:6px}
+  .pf-foot .link-btn{min-height:44px;padding:10px 12px;font-size:13px;font-weight:550}
+  .pf-foot .btn-ghost{min-height:44px;padding:10px 12px;font-size:13px}
+  .pf-foot .btn-primary{min-height:44px;padding:10px 12px;font-size:13px}
+  .pf-form{padding:16px}
+  .pf-form h3{font-size:16px;margin:0 0 14px}
 
   /* ---- DIALOGS: fullscreen sheets ---- */
   .dlg{
