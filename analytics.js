@@ -724,6 +724,14 @@
     }
     elCard.style.display = "block";
 
+    /* Hide the wide table on mobile; show a compact list instead. */
+    var isMobile = window.innerWidth <= 640;
+    if (isMobile) {
+      elCard.classList.add('payhist-mobile');
+    } else {
+      elCard.classList.remove('payhist-mobile');
+    }
+
     /* Build rows: one per month per tenant */
     var rows = [];
     var totalBill = 0;
@@ -795,6 +803,25 @@
       '<span class="pht-collected">Collected: <b>' + money(totalCollected) + '</b></span>' +
       '<span class="pht-outstanding">Outstanding: <b>' + money(outstanding) + '</b></span>';
     elTotal.innerHTML = totalHtml;
+
+    /* Mobile-friendly compact list */
+    var elMobile = document.getElementById('payhist-mobile');
+    if (elMobile) {
+      var mobileHtml = '';
+      rows.forEach(function (r) {
+        var paidClass = r.paid ? 'phm-paid' : 'phm-unpaid';
+        var paidText = r.paid ? 'Paid' : 'Unpaid';
+        var meta = r.month + (r.date ? ' · ' + r.date : '');
+        mobileHtml += '<div class="payhist-mobile-row">' +
+          '<div class="phm-name">' + esc(r.tenant) + ' ' + esc(r.roomNo) + ' · ' + esc(r.bedNo) + '</div>' +
+          '<div class="phm-meta">' + esc(meta) + '</div>' +
+          '<div class="phm-amount">' + money(r.amount) + '</div>' +
+          '<div class="' + paidClass + '">' + paidText + '</div>' +
+          (r.utr ? '<div class="phm-utr">' + esc(r.utr) + '</div>' : '') +
+          '</div>';
+      });
+      elMobile.innerHTML = mobileHtml;
+    }
   }
 
   global.PGAnalytics = {

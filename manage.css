@@ -1,6 +1,6 @@
 /* ---------- payment history table ---------- */
-.payhist-card{display:none}
-.payhist-table{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+.payhist-card{display:block}
+.payhist-table{width:100%;border-collapse:collapse;font-size:13px;min-width:0}
 .payhist-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:650;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
 .payhist-table td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle;font-weight:500}
 .payhist-table tbody tr{transition:background .14s ease}
@@ -10,6 +10,19 @@
 .payhist-table .ph-amount{font-weight:650;font-variant-numeric:tabular-nums}
 .payhist-table .ph-date{color:var(--muted);font-size:12.5px}
 .payhist-table .ph-utr{color:var(--brand);font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.payhist-mobile-list{display:none;margin-top:12px;font-size:13px}
+.payhist-mobile-row{padding:10px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:4px}
+.payhist-mobile-row:last-child{border-bottom:0}
+.payhist-mobile-row .phm-name{font-weight:600}
+.payhist-mobile-row .phm-meta{color:var(--muted);font-size:12px}
+.payhist-mobile-row .phm-amount{font-weight:600;text-align:right}
+.payhist-mobile-row .phm-utr{color:var(--brand);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+.payhist-mobile-row .phm-paid{color:var(--green);font-weight:600;font-size:11px;text-transform:uppercase}
+.payhist-mobile-row .phm-unpaid{color:var(--red);font-weight:600;font-size:11px;text-transform:uppercase}
+@media(max-width:640px){
+  .payhist-table{display:none}
+  .payhist-mobile-list{display:block}
+}
 .payhist-table .ph-paid{color:var(--green);font-weight:600;font-size:12px}
 .payhist-table .ph-unpaid{color:var(--red);font-weight:600;font-size:12px}
 .payhist-total{margin-top:16px;font-size:14px;font-weight:600;display:flex;gap:24px;flex-wrap:wrap}
