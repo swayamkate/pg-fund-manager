@@ -1,7 +1,7 @@
 const SUPER_ADMIN_EMAIL = 'iswayamkate@gmail.com'; // <-- CHANGE THIS!
 
 // Initialize Supabase (assuming PG_CONFIG is defined in ../config.js)
-const supabase = supabase.createClient(PG_CONFIG.SUPABASE_URL, PG_CONFIG.SUPABASE_ANON_KEY);
+const supabase = supabase.createClient(https://lkuuwoocxchjisodegur.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXV3b29jeGNoamlzb2RlZ3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzU5MjMsImV4cCI6MjEwMTUxMTkyM30.dGLxbkGIOfJ6Mo3BPKIEZZ6mjVZe3m1H56oaQam95KA);
 
 // DOM Elements
 const loginView = document.getElementById('admin-login-view');
