@@ -1,4 +1,4 @@
-const SUPER_ADMIN_EMAIL = 'ENTER_YOUR_ADMIN_EMAIL_HERE'; // <-- CHANGE THIS!
+const SUPER_ADMIN_EMAIL = 'iswayamkate@gmail.com'; // <-- CHANGE THIS!
 
 // Initialize Supabase (assuming PG_CONFIG is defined in ../config.js)
 const supabase = supabase.createClient(PG_CONFIG.SUPABASE_URL, PG_CONFIG.SUPABASE_ANON_KEY);
