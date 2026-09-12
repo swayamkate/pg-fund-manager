@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Super Admin | PG Manager</title>
+  <link rel="stylesheet" href="./admin.css">
+  
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- LOGIN VIEW -->
+  <div id="admin-login-view" class="container">
+    <div class="login-card">
+      <h2>Admin Access</h2>
+      <p>Restricted area. Super Admin only.</p>
+      
+      <form id="admin-login-form">
+        <div class="input-group">
+          <label for="admin-email">Email</label>
+          <input type="email" id="admin-email" required>
+        </div>
+        <div class="input-group">
+          <label for="admin-password">Password</label>
+          <input type="password" id="admin-password" required>
+        </div>
+        <button type="submit" id="login-btn">Log In</button>
+      </form>
+
+      <!-- Error Message Container -->
+      <div id="login-error" role="alert" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="admin-dashboard-view" style="display: none;">
+    <nav class="admin-nav">
+      <h1>PG Manager Admin</h1>
+      <button id="logout-btn">Log Out</button>
+    </nav>
+
+    <main class="dashboard-content">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-target="tab-metrics">Metrics</button>
+        <button class="tab-btn" data-target="tab-users">Users</button>
+        <button class="tab-btn" data-target="tab-logs">Error Logs</button>
+      </div>
+
+      <!-- Metrics Tab -->
+      <section id="tab-metrics" class="tab-pane active">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <h3>Total Properties</h3>
+            <p class="metric-value">--</p>
+          </div>
+          <div class="metric-card">
+            <h3>Total Beds Managed</h3>
+            <p class="metric-value">--</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Tab -->
+      <section id="tab-users" class="tab-pane" style="display: none;">
+        <h2>Registered PG Owners</h2>
+        <div class="table-container">
+          <table id="users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Joined</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="3">Loading data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Logs Tab -->
+      <section id="tab-logs" class="tab-pane" style="display: none;">
+        <h2>System Error Logs</h2>
+        <p>Check your Google Sheets backup for the critical error webhook logs.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Load Config and Auth Script -->
+  <script src="../config.js"></script>
+  <script src="./admin-auth.js"></script>
+</body>
+</html>
