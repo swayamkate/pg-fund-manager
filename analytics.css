@@ -1,28 +1,32 @@
 /* PG Manager — Analytics Components */
 
 /* ---- Heatmap ---- */
-.heatmap-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.heatmap-header h3{font-size:16px;font-weight:650;margin:0}
-.heatmap-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
-.heatmap-days-header span{text-align:center;font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase}
-.heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.heatmap-wrap{max-width:380px;margin:0 auto}
+.heatmap-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.heatmap-header h3{font-size:13px;font-weight:650;margin:0}
+.heatmap-nav{display:flex;align-items:center;gap:6px}
+.heatmap-nav button{appearance:none;background:var(--surface);border:1px solid var(--border);border-radius:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted);transition:background .15s}
+.heatmap-nav button:hover{background:var(--surface-2);color:var(--text)}
+.heatmap-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.heatmap-days-header span{text-align:center;font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase}
+.heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .heatmap-cell{
-  aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:2px;
+  aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;
   border:1px solid var(--border);background:var(--surface-2);
-  font-size:12px;font-weight:600;transition:transform .15s ease;
+  font-size:11px;font-weight:600;transition:transform .15s ease;
   cursor:default;position:relative;
 }
 .heatmap-cell:hover{transform:scale(1.08);z-index:1}
 .heatmap-empty{background:transparent;border:none}
 .heatmap-future{background:var(--surface-2);opacity:.4}
-.heatmap-today{border:2px solid var(--brand);box-shadow:0 0 0 3px var(--ring)}
+.heatmap-today{border:2px solid var(--brand);box-shadow:0 0 0 2px var(--ring)}
 .heatmap-none{background:var(--surface-2)}
 .heatmap-low{background:#dcfce7;border-color:#86efac}
 .heatmap-mid{background:#fef08a;border-color:#fde047}
 .heatmap-high{background:#bbf7d0;border-color:#4ade80}
-.heatmap-day{font-size:12px;font-weight:700;color:var(--text)}
-.heatmap-amt{font-size:9px;color:var(--green);font-weight:600}
+.heatmap-day{font-size:11px;font-weight:700;color:var(--text)}
+.heatmap-amt{font-size:8px;color:var(--green);font-weight:600}
 .heatmap-legend{display:flex;gap:14px;margin-top:12px;justify-content:center}
 .heatmap-legend span{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
 .heatmap-legend .key{width:12px;height:12px;border-radius:4px}

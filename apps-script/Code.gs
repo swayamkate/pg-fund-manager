@@ -22,6 +22,11 @@ var TOKEN = "change-me";
 var DATA_TAB = "_data";
 var COLUMNS = ["Room", "Floor", "Rent", "Bed", "Tenant", "Phone", "Joined", "On notice", "Paid"];
 
+/* Emergency alert recipient — set this to your own email address.
+   Fires when a PG Manager client reports a database save that failed
+   permanently after all client-side retries. */
+var ALERT_EMAIL = "you@example.com";
+
 function doGet() {
   return reply({ ok: true, message: "PG Manager backup endpoint is live." });
 }
@@ -45,6 +50,7 @@ function doPost(e) {
 
     if (req.action === "push") { return reply(push(account, req.data)); }
     if (req.action === "pull") { return reply(pull(account)); }
+    if (req.action === "critical_error_log") { return reply(criticalErrorLog(account, req)); }
 
     return reply({ ok: false, error: "Unknown action." });
   } catch (err) {
@@ -58,6 +64,49 @@ function reply(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ============================================================
+   Directive 4 — automated email alert pipeline.
+   The browser POSTs { action: "critical_error_log", error, tables, ... }
+   when a Supabase save has failed permanently after all retries.
+   ============================================================ */
+function criticalErrorLog(account, req) {
+  var subject = "[PG Manager] CRITICAL: database save failed for " + account;
+  var body =
+    "A PG Manager client failed to save data to Supabase after all retries.\n\n" +
+    "Account:  " + account + "\n" +
+    "Error:    " + String(req.error || "(none given)") + "\n" +
+    "Tables:   " + (req.tables && req.tables.length ? req.tables.join(", ") : "(not reported)") + "\n" +
+    "Attempts: " + String(req.attempts || "(not reported)") + "\n" +
+    "Browser:  " + String(req.userAgent || "(not reported)") + "\n" +
+    "Time:     " + String(req.at || stamp()) + "\n\n" +
+    "The owner has been shown a blocking warning in the app. Their latest " +
+    "changes are still in their browser and local backup only.";
+
+  try {
+    MailApp.sendEmail(ALERT_EMAIL, subject, body);
+    logCritical(account, body);
+    return { ok: true, alerted: true };
+  } catch (err) {
+    logCritical(account, body + "\n\n[EMAIL FAILED: " + String(err) + "]");
+    return { ok: false, error: "Could not send alert email: " + String(err) };
+  }
+}
+
+/* Keep a written trail in the sheet itself, capped at 200 entries. */
+function logCritical(account, body) {
+  try {
+    var tab = sheetFor("_alerts");
+    if (tab.getLastRow() === 0) {
+      tab.appendRow(["Time", "Account", "Detail"]);
+      tab.getRange(1, 1, 1, 3).setFontWeight("bold");
+    }
+    tab.appendRow([stamp(), account, String(body).slice(0, 2000)]);
+    if (tab.getLastRow() > 200) {
+      tab.deleteRows(2, tab.getLastRow() - 200);
+    }
+  } catch (err) { /* logging must never break the reply */ }
 }
 
 /* Tab names cannot contain : \ / ? * [ ] and cap out at 100 characters. */

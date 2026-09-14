@@ -44,6 +44,7 @@ create table if not exists public.beds (
   workplace        text default '',
   on_notice        boolean default false,
   paid_months      text[] default '{}',
+  payment_info     jsonb default '{}'::jsonb,
   created_at       timestamptz not null default now(),
 
   unique (room_id, bed_index)

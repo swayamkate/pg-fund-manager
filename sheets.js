@@ -67,6 +67,46 @@
     emit();
   }
 
+  /* Error visibility: every failure is announced on the event bus so app.js
+     can surface it as a toast. Sheets failures are never data-loss-critical
+     (Supabase is primary) so they warn but do not lock the UI. */
+  function emitSheetsError(message) {
+    try {
+      global.dispatchEvent(new CustomEvent("pg:sheets-error", { detail: { message: message } }));
+    } catch (e) {}
+    console.error("[PGSheets]", message);
+  }
+
+  /* ---- Emergency alert: fire-and-forget dispatch of critical failures ----
+     Used by the data-safety layer (via app.js) to email the developer when a
+     Supabase save has failed permanently. Queued through the same debounced
+     path so a storm of failures sends at most one alert per DELAY window. */
+  function criticalErrorLog(details) {
+    if (!ENDPOINT) {
+      console.error("[PGSheets] CRITICAL (no backup endpoint to alert through):", details);
+      return;
+    }
+    var payload = {
+      action: "critical_error_log",
+      token: TOKENS[tokenIdx] || TOKENS[0],
+      account: account || "unknown",
+      error: String((details && details.error) || details || "unknown"),
+      tables: (details && details.tables) || [],
+      userAgent: navigator.userAgent,
+      at: new Date().toISOString()
+    };
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(function () {
+      console.warn("[PGSheets] Critical error alert dispatched to developer.");
+    }).catch(function (err) {
+      /* Last-resort path: even the alert failed. Nothing left but the console. */
+      console.error("[PGSheets] CRITICAL ALERT DISPATCH FAILED:", err);
+    });
+  }
+
   function send(payload, idx) {
     payload.token = TOKENS[idx];
     payload.account = account;
@@ -121,7 +161,9 @@
       })
       .catch(function (err) {
         busy = false;
-        setStatus("error", err && err.message ? err.message : String(err));
+        var msg = err && err.message ? err.message : String(err);
+        setStatus("error", msg);
+        emitSheetsError("Sheet backup failed: " + msg);
         return false;
       });
   }
@@ -137,6 +179,10 @@
   var PGSheets = {
     // true once config.js has a script URL
     enabled: !!ENDPOINT,
+
+    /* Exposed so the data-safety layer in app.js can dispatch developer
+       alerts through the Apps Script endpoint. */
+    criticalErrorLog: criticalErrorLog,
 
     use: function (accountId) {
       account = String(accountId || "local");

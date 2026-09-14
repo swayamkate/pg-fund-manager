@@ -123,7 +123,7 @@
     html += '<span><span class="key heatmap-none"></span> None</span>';
     html += '</div>';
 
-    container.innerHTML = html;
+    container.innerHTML = '<div class="heatmap-wrap">' + html + '</div>';
   }
 
   /* ================================================================

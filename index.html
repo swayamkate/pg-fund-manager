@@ -7,6 +7,7 @@
 <meta name="description" content="Free PG & Hostel management app — manage beds, tenants, rent collection, expenses, complaints, and analytics in one dashboard. Completely free, works on phone and desktop." />
 <meta name="theme-color" content="#000000" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <link rel="canonical" href="https://pg.swayamkate.com/" />
 <meta property="og:type" content="website" />
@@ -42,11 +43,11 @@ html.auth-pending body{visibility:hidden}
 <!-- Smart import: OCR for images and PDF text extraction -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js?v=13"></script>
-<script src="supabase-storage.js?v=13"></script>
-<script src="auth.js?v=13"></script>
-<script src="store.js?v=13"></script>
-<script src="sheets.js?v=13"></script>
+<script src="config.js?v=17"></script>
+<script src="supabase-storage.js?v=17"></script>
+<script src="auth.js?v=17"></script>
+<script src="store.js?v=17"></script>
+<script src="sheets.js?v=17"></script>
 <script>
   // Unregister any old service workers that may be serving stale cache.
   // SW is disabled — all files load fresh from the network every time.
@@ -158,6 +159,10 @@ html.auth-pending body{visibility:hidden}
           </span>
         </a>
         <div class="topbar-right">
+          <span class="sync-pill" id="sync-status-pill" data-state="idle" title="Cloud sync status">Not synced yet</span>
+          <button class="icon-btn sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Toggle sidebar" title="Toggle sidebar">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
           <button class="btn-ghost" data-act="name-property" type="button">Property name</button>
           <span class="avatar" id="avatar" title="Owner">?</span>
           <button class="icon-btn" data-act="rate-card" type="button" aria-label="Rate card" title="Rate card">
@@ -171,6 +176,35 @@ html.auth-pending body{visibility:hidden}
         </div>
       </div>
     </header>
+
+    <!-- Database error banner -->
+    <!-- Startup schema drift warning: live DB missing columns the app writes -->
+    <div id="schema-drift-banner" class="schema-drift-banner" hidden role="alert">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="schema-drift-msg">Database schema out of date — run supabase/migrate-schema.sql.</span>
+      <button class="schema-drift-reload" onclick="location.reload()" type="button">↻ Re-check</button>
+    </div>
+
+    <div id="db-error-banner" class="db-error-banner" hidden>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Database connection lost — data is saving locally only. Refresh to retry.</span>
+      <button class="db-error-banner-close" onclick="location.reload()" type="button">↻ Retry</button>
+    </div>
+
+    <!-- Critical sync failure modal (Directive 3) -->
+    <div id="critical-sync-modal" class="csm-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="csm-title">
+      <div class="csm-card">
+        <div class="csm-icon">⚠️</div>
+        <h3 id="csm-title">Critical Sync Warning</h3>
+        <p class="csm-body">Database save failed. Check your internet connection. <b>Do not close this tab.</b></p>
+        <p class="csm-detail muted-sm"></p>
+        <p class="csm-hint muted-sm">Your latest changes are safe in this browser and in the local backup, but they have NOT reached the cloud database yet.</p>
+        <div class="csm-actions">
+          <button class="btn-primary btn-sm" type="button" id="csm-retry">Retry Now</button>
+          <button class="btn-ghost btn-sm" type="button" id="csm-later">Keep editing (stay on this tab)</button>
+        </div>
+      </div>
+    </div>
 
     <main class="wrap" id="main">
 
@@ -192,7 +226,6 @@ html.auth-pending body{visibility:hidden}
       </div>
       <div class="setup-actions">
         <button class="btn-ghost" data-act="name-property" type="button">Name property</button>
-        <button class="btn-ghost" data-act="import-data" type="button">Import a spreadsheet</button>
         <button class="btn-primary btn-sm" data-act="add-room" type="button">Add first room</button>
       </div>
     </div>
@@ -315,13 +348,20 @@ html.auth-pending body{visibility:hidden}
     </div>
     <div id="tenants-empty" hidden></div>
     <div class="card table-card">
-      <div class="table-scroll">
-        <table class="table">
-          <thead>
-            <tr><th>Tenant</th><th>Bed</th><th>Phone</th><th>Joined</th><th>Rent</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody id="tenant-rows"></tbody>
-        </table>
+      <button class="tenant-toggle" id="tenant-toggle" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+        <span id="tenant-toggle-text">Show tenants</span>
+        <span class="tenant-toggle-arrow" aria-hidden="true"></span>
+      </button>
+      <div class="tenant-table-wrap" id="tenant-table-wrap" hidden>
+        <div class="table-scroll">
+          <table class="table">
+            <thead>
+              <tr><th>Tenant</th><th>Bed</th><th>Phone</th><th>Joined</th><th>Rent</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="tenant-rows"></tbody>
+          </table>
+        </div>
       </div>
     </div>
     <div class="tenant-cards" id="tenant-cards"></div>
@@ -440,8 +480,19 @@ html.auth-pending body{visibility:hidden}
       </div>
     </div>
 
+    <!-- Owner profile card -->
     <div class="card" id="owner-card"></div>
 
+    <!-- Quick Actions (always visible) -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Quick Actions</h2>
+        <span class="muted-sm">Bulk operations</span>
+      </div>
+      <div class="owner-actions" id="owner-actions"></div>
+    </div>
+
+    <!-- Settings + Rate card (always visible, two columns) -->
     <div class="cols">
       <div class="card">
         <div class="card-head">
@@ -461,63 +512,80 @@ html.auth-pending body{visibility:hidden}
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Quick Actions</h2>
-        <span class="muted-sm">Bulk operations</span>
+    <!-- Collapsible: Security Deposits -->
+    <details class="owner-section">
+      <summary class="owner-section-head">
+        <span class="oss-icon">💰</span>
+        <span class="oss-text"><b>Security Deposits</b><span id="deposit-summary"></span></span>
+        <span class="oss-arrow" aria-hidden="true"></span>
+      </summary>
+      <div class="owner-section-body">
+        <div id="deposit-list"></div>
       </div>
-      <div class="owner-actions" id="owner-actions"></div>
-    </div>
+    </details>
 
-    <!-- Security Deposits -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Security Deposits</h2>
-        <span class="muted-sm" id="deposit-summary"></span>
+    <!-- Collapsible: PG House Rules -->
+    <details class="owner-section">
+      <summary class="owner-section-head">
+        <span class="oss-icon">📋</span>
+        <span class="oss-text"><b>PG House Rules</b><span id="rules-summary"></span></span>
+        <button class="link-btn oss-edit" type="button" data-act="edit-rules" onclick="event.stopPropagation()">Edit</button>
+        <span class="oss-arrow" aria-hidden="true"></span>
+      </summary>
+      <div class="owner-section-body">
+        <div id="rules-display"></div>
       </div>
-      <div id="deposit-list"></div>
-    </div>
+    </details>
 
-    <!-- PG Rules -->
-    <div class="card">
-      <div class="card-head">
-        <h2>PG House Rules</h2>
-        <button class="link-btn" type="button" data-act="edit-rules">Edit rules</button>
+    <!-- Collapsible: Staff Attendance -->
+    <details class="owner-section">
+      <summary class="owner-section-head">
+        <span class="oss-icon">📊</span>
+        <span class="oss-text"><b>Staff Attendance</b><span></span></span>
+        <span class="oss-arrow" aria-hidden="true"></span>
+      </summary>
+      <div class="owner-section-body">
+        <div id="staff-attendance-container"></div>
       </div>
-      <div id="rules-display"></div>
-    </div>
+    </details>
 
-    <!-- Staff Attendance -->
-    <div class="card">
-      <div id="staff-attendance-container"></div>
-    </div>
-
-    <!-- Data Management -->
-    <div class="card">
-      <div class="card-head">
-        <h2>Data Management</h2>
-        <span class="muted-sm">Backup, export, or reset</span>
+    <!-- Collapsible: Data Management -->
+    <details class="owner-section">
+      <summary class="owner-section-head">
+        <span class="oss-icon">🗄️</span>
+        <span class="oss-text"><b>Data Management</b><span id="data-summary"></span></span>
+        <span class="oss-arrow" aria-hidden="true"></span>
+      </summary>
+      <div class="owner-section-body">
+        <div class="owner-actions" id="data-actions"></div>
       </div>
-      <div class="owner-actions" id="data-actions"></div>
-    </div>
+    </details>
 
-    <div class="card" id="access-card">
-      <div class="card-head">
-        <h2>Account &amp; access</h2>
-        <span class="muted-sm" id="access-mode"></span>
+    <!-- Collapsible: Account & access -->
+    <details class="owner-section">
+      <summary class="owner-section-head">
+        <span class="oss-icon">🔒</span>
+        <span class="oss-text"><b>Account &amp; access</b><span id="access-mode"></span></span>
+        <span class="oss-arrow" aria-hidden="true"></span>
+      </summary>
+      <div class="owner-section-body">
+        <div id="account-body"></div>
       </div>
-      <div id="account-body"></div>
-    </div>
+    </details>
 
-    <div class="card" id="invite-card" hidden>
-      <div class="card-head">
-        <h2>People &amp; invites</h2>
-        <button class="link-btn" type="button" data-act="new-invite">Create an invite</button>
+    <!-- Collapsible: People & invites -->
+    <details class="owner-section" id="invite-card" hidden>
+      <summary class="owner-section-head">
+        <span class="oss-icon">👥</span>
+        <span class="oss-text"><b>People &amp; invites</b><span></span></span>
+        <button class="link-btn oss-edit" type="button" data-act="new-invite" onclick="event.stopPropagation()">New invite</button>
+        <span class="oss-arrow" aria-hidden="true"></span>
+      </summary>
+      <div class="owner-section-body">
+        <div id="people-list"></div>
+        <div id="invite-list"></div>
       </div>
-      <div id="people-list"></div>
-      <div id="invite-list"></div>
-    </div>
+    </details>
   </section>
 
 </main>
@@ -1018,11 +1086,11 @@ html.auth-pending body{visibility:hidden}
   </div>
 </dialog>
 
-<script src="analytics.js"></script>
-<script src="app.js?v=13"></script>
-<script src="import.js?v=13"></script>
-<script src="profile.js?v=13"></script>
-<script src="account.js?v=13"></script>
-<script src="rent.js?v=13"></script>
+<script src="analytics.js?v=17"></script>
+<script src="app.js?v=17"></script>
+<script src="import.js?v=17"></script>
+<script src="profile.js?v=17"></script>
+<script src="account.js?v=17"></script>
+<script src="rent.js?v=17"></script>
 </body>
 </html>

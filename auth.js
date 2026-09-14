@@ -913,7 +913,10 @@
       return loadDb().users.map(function (u) {
         return { id: u.id, name: u.name, username: u.username || "", role: u.role, created: u.created };
       });
-    }
+    },
+
+    /* Expose the Supabase client so other modules reuse it (no duplicates) */
+    getClient: function () { return client; }
   };
 
   global.PGAuth = PGAuth;

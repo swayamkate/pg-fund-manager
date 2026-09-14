@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS beds (
   workplace TEXT DEFAULT '',
   on_notice BOOLEAN DEFAULT false,
   paid_months TEXT[] DEFAULT '{}',
+  payment_info JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

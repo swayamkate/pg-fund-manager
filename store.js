@@ -378,8 +378,33 @@
       localStorage.setItem(key, JSON.stringify(state));
       return true;
     } catch (err) {
+      /* Storage full or private mode — try to free space by trimming activity */
+      if (state.activity.length > 5) {
+        state.activity.length = 5;
+        try {
+          localStorage.setItem(key, JSON.stringify(state));
+          return true;
+        } catch (e2) { /* give up */ }
+      }
+      /* Surface the error via toast if available */
+      if (typeof toast === "function") {
+        toast("Could not save to browser storage. Data is still in memory but will be lost on refresh.", "error", 8000);
+      }
       return false;
     }
+  }
+
+  /* ---------- DATA SAFETY: deep snapshot ----------
+     The single canonical way to take an immutable copy of the state before
+     handing it to any async pipeline. structuredClone is used when available
+     (faster, handles more types); the JSON round-trip is the universal
+     fallback. Callers receive a copy that live mutations can never touch, so
+     an in-flight upload cannot be corrupted by mid-save edits. */
+  function deepSnapshot(value) {
+    if (typeof global.structuredClone === "function") {
+      try { return global.structuredClone(value); } catch (e) { /* fall through */ }
+    }
+    return JSON.parse(JSON.stringify(value));
   }
 
   function log(type, text, meta) {
@@ -438,6 +463,10 @@
     },
 
     state: function () { return state; },
+
+    /* Immutable deep copy of the live state — pass this to any async save
+       pipeline. Mutating the live state afterwards cannot corrupt it. */
+    snapshot: function () { return deepSnapshot(state); },
 
     isEmpty: function () { return state.rooms.length === 0; },
 

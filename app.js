@@ -276,6 +276,9 @@ function renderFloors() {
   }).join("");
 }
 
+var _feedExpanded = false;
+var _FEED_INITIAL = 5;
+
 function renderFeed() {
   const items = PGStore.state().activity;
   const glyph = { pay: "\u20b9", in: "\u2192", out: "\u2190" };
@@ -285,7 +288,10 @@ function renderFeed() {
     return;
   }
 
-  el("feed").innerHTML = items.map((a) => {
+  var showItems = _feedExpanded ? items : items.slice(0, _FEED_INITIAL);
+  var hasMore = items.length > _FEED_INITIAL;
+
+  var html = showItems.map((a) => {
     const meta = [a.meta, sinceLabel(a.at)].filter(Boolean).join(" · ");
     return `
     <li>
@@ -293,6 +299,16 @@ function renderFeed() {
       <span class="feed-body">${esc(a.text)}<span>${esc(meta)}</span></span>
     </li>`;
   }).join("");
+
+  if (hasMore) {
+    if (_feedExpanded) {
+      html += '<li class="feed-see-more"><button class="link-btn" type="button" onclick="_feedExpanded=false;renderFeed()">Show less</button></li>';
+    } else {
+      html += '<li class="feed-see-more"><button class="link-btn" type="button" onclick="_feedExpanded=true;renderFeed()">See ' + (items.length - _FEED_INITIAL) + ' more updates</button></li>';
+    }
+  }
+
+  el("feed").innerHTML = html;
 }
 
 /* ---------- dashboard graphs ---------- */
@@ -346,7 +362,7 @@ function renderGraph() {
     : "Last 6 months";
 
   el("chart-container").innerHTML = `
-    <svg viewBox="0 0 ${chartW} ${chartH + 30}" width="100%" height="auto" style="min-width:${chartW}px;display:block">
+    <svg viewBox="0 0 ${chartW} ${chartH + 30}" width="100%" style="min-width:${chartW}px;display:block">
       <!-- Grid lines -->
       ${[0, 0.25, 0.5, 0.75, 1].map((pct) => {
         const y = chartH - pct * chartH;
@@ -505,10 +521,15 @@ function renderRooms() {
   }).join("");
 }
 
+var _tenantsExpanded = false;
+
 function renderTenants() {
   const list = tenants();
   const table = document.querySelector(".table-card");
   const blank = el("tenants-empty");
+  const tableWrap = el("tenant-table-wrap");
+  const toggleBtn = el("tenant-toggle");
+  const toggleText = el("tenant-toggle-text");
 
   if (!list.length) {
     table.hidden = true;
@@ -529,6 +550,19 @@ function renderTenants() {
   table.hidden = false;
   blank.hidden = true;
   blank.innerHTML = "";
+
+  /* Toggle button shows count */
+  if (toggleText) {
+    toggleText.textContent = _tenantsExpanded
+      ? "Hide " + list.length + " tenant" + (list.length !== 1 ? "s" : "")
+      : "Show " + list.length + " tenant" + (list.length !== 1 ? "s" : "");
+  }
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", String(_tenantsExpanded));
+  }
+  if (tableWrap) {
+    tableWrap.hidden = !_tenantsExpanded;
+  }
 
   const actions = (t, prefix) => {
     const id = `${prefix}dd-${t.roomId}-${t.bedIndex}`;
@@ -909,7 +943,7 @@ function saveSetRents() {
       room.beds[bedIdx].rent = newRent > 0 ? newRent : null;
     }
   });
-  PGStore.commit(s);
+  commit();
   toast('Bed rents updated', 'success');
   closeDlg('dlg-setrents');
   renderAll();
@@ -1086,6 +1120,12 @@ function renderRules() {
   if (rules.lockout) { items.push({ label: "Lockout time", value: rules.lockout }); }
   if (rules.other) { items.push({ label: "Other rules", value: rules.other }); }
 
+  /* Update accordion summary */
+  var rulesSummary = el("rules-summary");
+  if (rulesSummary) {
+    rulesSummary.textContent = items.length ? items.length + " rule" + (items.length !== 1 ? "s" : "") + " set" : "Not configured";
+  }
+
   if (!items.length) {
     el("rules-display").innerHTML = '<p class="feed-blank">No rules set yet. Click "Edit rules" to add house rules for your PG.</p>';
     return;
@@ -1108,6 +1148,12 @@ function renderDataActions() {
   const hasData = t.rooms > 0 || t.occupied > 0 || (s.expenses || []).length > 0;
   const hasExpenses = (s.expenses || []).length > 0;
   const hasRooms = t.rooms > 0;
+
+  /* Update accordion summary */
+  var dataSummary = el("data-summary");
+  if (dataSummary) {
+    dataSummary.textContent = dataSizeKB + " KB · " + t.rooms + " rooms · " + t.occupied + " tenants";
+  }
 
   el("data-actions").innerHTML = `
     <div class="oa-grid">
@@ -1249,34 +1295,31 @@ function renderAll() {
   const s = PGStore.state();
   const t = totals();
   const list = tenants();
-  const isEmpty = PGStore.isEmpty();
-  
   el("brand-prop").textContent = s.property || "Name your property";
   const bpMobile = document.getElementById("brand-prop-mobile");
   if (bpMobile) { bpMobile.textContent = s.property || "Name your property"; }
-  el("setup").hidden = !isEmpty;
-  
   /* Topbar — show property name on the button when set */
   var nameBtn = document.querySelector('[data-act="name-property"]');
   if (nameBtn && nameBtn.closest('.topbar-right')) {
     nameBtn.textContent = s.property || 'Name property';
   }
   
-  /* Disable setup buttons when not needed */
+  /* Setup card: only show when property is NOT named AND no rooms exist */
   var hasRooms = s.rooms && s.rooms.length > 0;
   var hasProperty = !!(s.property && s.property.trim());
   var setupCard = el("setup");
-  if (!isEmpty) {
+  if (hasProperty && hasRooms) {
+    /* User is set up — hide the card permanently */
     setupCard.hidden = true;
   } else {
     setupCard.hidden = false;
     /* Update setup card message based on progress */
     var setupMsg = setupCard.querySelector('.sub');
     if (setupMsg) {
-      if (hasProperty && hasRooms) {
-        setupMsg.textContent = 'Rooms are ready — move tenants into beds to start tracking rent.';
-      } else if (hasProperty) {
+      if (hasProperty) {
         setupMsg.textContent = 'Property named! Add your rooms next, then move tenants into beds.';
+      } else if (hasRooms) {
+        setupMsg.textContent = 'Rooms added — name your property to get started.';
       } else {
         setupMsg.textContent = 'This account is empty. Name the property, add your rooms, then move tenants into beds.';
       }
@@ -1384,34 +1427,267 @@ function renderBackup(s) {
   el("backup-actions").hidden = !(window.PGSheets && PGSheets.enabled);
 }
 
-/* Redraw, then send the change to the sheet and Supabase. */
-/* ---------- debounce helper ---------- */
+/* ================================================================
+   DATA SAFETY PIPELINE
+   Directive 1: deep snapshot before every async save
+   Directive 2: retries with exponential backoff (in supabase-storage.js)
+   Directive 3: beforeunload lock + blocking modal with Retry Now
+   Directive 4: permanent failure → email alert via Apps Script
+   Directive 5: every failure surfaces as a toast — no silent catches
+   ================================================================ */
 var _commitTimer = null;
+var dbLocked = false;          /* hard lock: edits blocked after permanent failure */
+var _criticalFailure = false;  /* at least one save has failed permanently */
+var _consecutiveFails = 0;
+
+function dbSyncBusy() {
+  /* Busy while a debounced commit is pending, a retry loop is sleeping,
+     or any save request is in flight. Drives the beforeunload trap. */
+  if (_commitTimer) { return true; }
+  if (window.SupabaseStorage && SupabaseStorage.isAvailable && SupabaseStorage.isAvailable()) {
+    if (SupabaseStorage.isRetryActive && SupabaseStorage.isRetryActive()) { return true; }
+    if (SupabaseStorage.inflightCount && SupabaseStorage.inflightCount() > 0) { return true; }
+  }
+  return false;
+}
+
+/* ---- Directive 3: unload protection ---- */
+window.addEventListener("beforeunload", function (e) {
+  if (dbSyncBusy() || _criticalFailure) {
+    var msg = _criticalFailure
+      ? "A database save FAILED. Closing now may LOSE your latest changes."
+      : "Your latest changes are still being saved.";
+    e.preventDefault();
+    e.returnValue = msg; /* Chrome/Edge */
+    return msg;          /* Firefox/Safari */
+  }
+});
+
+/* ---- The single save pipeline. Takes an immutable snapshot and fans out. */
+function dispatchSave() {
+  /* Directive 1: immutable snapshot — live edits mid-upload cannot corrupt it */
+  var snapshot = (PGStore.snapshot)
+    ? PGStore.snapshot()
+    : JSON.parse(JSON.stringify(PGStore.state()));
+
+  if (window.PGSheets) { PGSheets.schedule(snapshot); }
+
+  if (window.SupabaseStorage && SupabaseStorage.isAvailable()) {
+    SupabaseStorage.save(snapshot).then(function () {
+      _consecutiveFails = 0;
+      if (_criticalFailure) {
+        /* A previously failing save finally went through — stand down. */
+        _criticalFailure = false;
+        dbLocked = false;
+        hideCriticalModal();
+        showDbBanner(false);
+        toast("Database connection restored — all data is synced.", "success", 5000);
+      }
+    }).catch(function (e) {
+      onPermanentSaveFailure(e);
+    });
+  }
+}
+
 function commit() {
+  if (dbLocked && !_criticalFailure) {
+    toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
+    return;
+  }
   /* Debounce: if multiple changes happen within 30ms, only render once. */
   if (_commitTimer) { clearTimeout(_commitTimer); }
   _commitTimer = setTimeout(function () {
     _commitTimer = null;
     renderAll();
-    if (window.PGSheets) { PGSheets.schedule(PGStore.state()); }
-    if (window.SupabaseStorage && SupabaseStorage.isAvailable()) {
-      SupabaseStorage.save(PGStore.state()).catch(function () {});
-    }
+    dispatchSave();
   }, 30);
 }
 
 /* Immediate commit — bypasses debounce, used for critical saves. */
 function commitNow() {
+  if (dbLocked && !_criticalFailure) {
+    toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
+    return;
+  }
   if (_commitTimer) { clearTimeout(_commitTimer); _commitTimer = null; }
   renderAll();
-  if (window.PGSheets) { PGSheets.schedule(PGStore.state()); }
-  if (window.SupabaseStorage && SupabaseStorage.isAvailable()) {
-    SupabaseStorage.save(PGStore.state()).catch(function () {});
+  dispatchSave();
+}
+
+/* ---- Directive 4: permanent failure → blocking UI + email alert ---- */
+function onPermanentSaveFailure(e) {
+  _consecutiveFails += 1;
+  var msg = e && e.message ? e.message : "Unknown database error";
+
+  /* Every permanent failure is visible (Directive 5)... */
+  toast("Save failed after all retries: " + msg, "error", 8000);
+
+  if (_consecutiveFails >= 3 || (e && e.isPermanentSaveFailure)) {
+    _criticalFailure = true;
+    dbLocked = true;
+    showDbBanner(true);
+    showCriticalModal(msg);
+    /* Directive 4: emergency email dispatch through the Apps Script endpoint */
+    if (window.PGSheets && typeof PGSheets.criticalErrorLog === "function") {
+      PGSheets.criticalErrorLog({
+        error: msg,
+        tables: (e && e.failedTables) || [],
+        attempts: (e && e.attempts) || null
+      });
+    } else {
+      console.error("[CRITICAL] Database save failed and no alert channel exists:", msg);
+    }
   }
 }
 
+/* ---- Directive 3: blocking modal ---- */
+function showCriticalModal(message) {
+  var m = el("critical-sync-modal");
+  if (!m) {
+    console.error("[CRITICAL]", message);
+    return;
+  }
+  m.hidden = false;
+  var detail = m.querySelector(".csm-detail");
+  if (detail) { detail.textContent = message; }
+}
+
+function hideCriticalModal() {
+  var m = el("critical-sync-modal");
+  if (m) { m.hidden = true; }
+}
+
+/* Manual retry — the button inside the blocking modal */
+function manualRetrySave() {
+  toast("Retrying database save\u2026", "info", 3000);
+  _consecutiveFails = 0;
+  dbLocked = false;
+  commitNow();
+}
+
+/* Modal buttons (deferred to DOMContentLoaded-safe wiring — the modal exists
+   in static HTML, so direct wiring at script eval is fine). */
+(function wireCriticalModal() {
+  var retryBtn = el("csm-retry");
+  if (retryBtn) {
+    retryBtn.addEventListener("click", function () {
+      hideCriticalModal();
+      manualRetrySave();
+    });
+  }
+  var laterBtn = el("csm-later");
+  if (laterBtn) {
+    laterBtn.addEventListener("click", function () {
+      /* Dismiss the dialog but KEEP the failure state: beforeunload stays
+         armed so closing the tab still warns about unsynced data. */
+      hideCriticalModal();
+      toast("Reminder: your changes are NOT synced to the database yet.", "warn", 8000);
+    });
+  }
+})();
+
+/* ---- Directive 2 telemetry: retry chatter surfaces as soft toasts ---- */
+window.addEventListener("pg:storage-retrying", function (ev) {
+  var d = ev.detail || {};
+  toast("Save retry " + (d.attempt || "?") + "/" + (d.maxAttempts || "?") +
+    " for " + (d.label || "data") + " — waiting " + Math.round((d.delayMs || 0) / 1000) + "s\u2026",
+    "warn", 2500);
+});
+
+window.addEventListener("pg:storage-recovered", function () {
+  toast("Database save recovered.", "success", 3000);
+});
+
+window.addEventListener("pg:storage-error", function (ev) {
+  var d = ev.detail || {};
+  console.error("[Storage]", d.table, d.message);
+  /* Per-table errors are logged here; the full save rejection raises the
+     blocking UI via onPermanentSaveFailure, so no extra toast is needed. */
+});
+
+/* Schema-drift fallback: the save went through but without one column. */
+window.addEventListener("pg:storage-schema-fallback", function (ev) {
+  var d = ev.detail || {};
+  console.warn("[Storage] schema fallback:", d.table, d.message);
+  toast("Saved with reduced fields — run supabase/migrate-schema.sql to fix the database.", "warn", 7000);
+});
+
+/* Directive 5: sheets failures warn but never lock (Supabase is primary) */
+window.addEventListener("pg:sheets-error", function (ev) {
+  toast((ev.detail && ev.detail.message) || "Sheet backup failed.", "warn", 6000);
+});
+
+/* ---- Directive 2: Syncing / Synced / Sync_Failed status indicator ---- */
+var SYNC_LABELS = {
+  idle: "Not synced yet",
+  syncing: "Syncing\u2026",
+  synced: "Synced",
+  sync_failed: "Sync failed"
+};
+
+function renderSyncStatus(state, detail) {
+  var pill = el("sync-status-pill");
+  if (!pill) { return; }
+  pill.dataset.state = state;
+  pill.textContent = SYNC_LABELS[state] || state;
+  pill.title = detail || SYNC_LABELS[state] || "";
+}
+
+window.addEventListener("pg:sync-status", function (ev) {
+  var d = ev.detail || {};
+  renderSyncStatus(d.state, d.detail);
+  /* Sync_failed reinforces the banner; synced stands everything down */
+  if (d.state === "sync_failed") { showDbBanner(true); }
+  if (d.state === "synced" && !_criticalFailure) { showDbBanner(false); }
+});
+
+/* ---- Database warning banner ---- */
+function showDbBanner(show) {
+  var banner = el('db-error-banner');
+  if (banner) { banner.hidden = !show; }
+}
+
+/* ---- Startup schema drift banner ----
+   Fired by SupabaseStorage.checkSchema() when the live DB is missing
+   columns the app writes. Warns persistently; saving still works via
+   the adaptive fallback, but fields will be dropped until the
+   migration is run. */
+function showSchemaBanner(drift) {
+  var banner = el("schema-drift-banner");
+  if (!banner) { return; }
+  var missing = (drift || []).filter(function (d) { return d.column; });
+  var other = (drift || []).filter(function (d) { return !d.column; });
+  var parts = [];
+  if (missing.length) {
+    parts.push("Missing columns: " + missing.map(function (d) { return d.table + "." + d.column; }).join(", "));
+  }
+  if (other.length) {
+    parts.push(other.length + " table(s) could not be verified");
+  }
+  var text = parts.join(" · ") + " — run supabase/migrate-schema.sql to fix.";
+  var msg = banner.querySelector(".schema-drift-msg");
+  if (msg) { msg.textContent = text; }
+  banner.hidden = false;
+  toast("Database schema out of date — some fields will not save until the migration runs.", "warn", 8000);
+}
+window.addEventListener("pg:storage-schema-drift", function (ev) {
+  showSchemaBanner(ev.detail && ev.detail.drift);
+});
+/* A later healthy check (e.g. after the migration was run and the owner
+   hits Re-check) clears the banner again. */
+window.addEventListener("pg:storage-schema-ok", function () {
+  var banner = el("schema-drift-banner");
+  if (banner && !banner.hidden) { banner.hidden = true; }
+});
+
 /* Expose for other files (rent.js) that need to trigger a full save. */
-window.PGRender = { commit: commit };
+window.PGRender = {
+  commit: commit,
+  commitNow: commitNow,
+  isDbLocked: function () { return dbLocked; },
+  isSyncBusy: dbSyncBusy,
+  manualRetrySave: manualRetrySave
+};
 
 /* ---------- dialogs ---------- */
 
@@ -2175,10 +2451,33 @@ el("form-rules").addEventListener("submit", (e) => {
 
 el("form-property").addEventListener("submit", (e) => {
   e.preventDefault();
-  PGStore.setProperty(el("p-name").value);
+  const val = el("p-name").value.trim();
+  const result = PGStore.setProperty(val);
+  if (!result || result.ok !== true) {
+    toast("Could not save property name. Storage may be full.", "error", 6000);
+    return;
+  }
+  renderAll();
   closeDlg("dlg-property");
-  toast("Property name saved!", "success");
+  toast(val ? "Property name saved!" : "Property name cleared.", "success");
   commit();
+});
+
+/* Save on Enter key in the property name input */
+el("p-name").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    el("form-property").dispatchEvent(new Event("submit"));
+  }
+});
+
+/* Save on blur as a safety net */
+el("p-name").addEventListener("blur", () => {
+  const val = el("p-name").value.trim();
+  if (val !== PGStore.state().property) {
+    PGStore.setProperty(val);
+    renderAll();
+  }
 });
 
 el("form-backfill").addEventListener("submit", (e) => {
@@ -2237,6 +2536,28 @@ el("tabs").addEventListener("click", (e) => {
   if (tab) { location.hash = tab.dataset.view; }
 });
 
+/* ---------- tenant table toggle ---------- */
+var tenantToggleBtn = el('tenant-toggle');
+if (tenantToggleBtn) {
+  tenantToggleBtn.addEventListener('click', function () {
+    _tenantsExpanded = !_tenantsExpanded;
+    renderTenants();
+  });
+}
+
+/* ---------- sidebar toggle ---------- */
+var sidebarToggle = el('sidebar-toggle');
+if (sidebarToggle) {
+  sidebarToggle.addEventListener('click', function () {
+    var sb = document.querySelector('.sidebar');
+    var main = document.querySelector('.app-main');
+    if (!sb || !main) return;
+    var collapsed = sb.classList.toggle('is-collapsed');
+    main.classList.toggle('sidebar-collapsed', collapsed);
+    sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+  });
+}
+
 /* Set rents save button */
 var setRentBtn = el('setrents-save');
 if (setRentBtn) { setRentBtn.addEventListener('click', saveSetRents); }
@@ -2287,6 +2608,16 @@ function boot(session) {
   PGStore.use(accountId);
   window.PG_SESSION = { name: name, id: accountId };
 
+  /* ---- Block all data-mutating forms when DB is locked ---- */
+  document.addEventListener("submit", function (e) {
+    if (dbLocked) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
+      showDbBanner(true);
+    }
+  }, true);
+
   if (window.PGSheets) {
     PGSheets.use(accountId);
     PGSheets.onStatus(renderBackup);
@@ -2308,15 +2639,57 @@ function boot(session) {
   if (window.SupabaseStorage) {
     SupabaseStorage.init(accountId);
     if (SupabaseStorage.isAvailable()) {
+      /* Startup schema check: verify every table has the columns the client
+         writes BEFORE any save can hit a 42703 and lose a field. */
+      SupabaseStorage.checkSchema().then(function (r) {
+        if (r && r.checked && !r.ok) { showSchemaBanner(r.drift); }
+      });
+      /* Block edits while cloud data is loading to prevent overwrite races */
+      var cloudLoading = true;
+      SupabaseStorage.healthCheck().then(function (ok) {
+        if (!ok) {
+          dbLocked = true;
+          cloudLoading = false;
+          showDbBanner(true);
+          toast("Database unreachable — all edits blocked. Refresh to retry.", "error", 0);
+        }
+      });
       SupabaseStorage.load().then(function (data) {
+        cloudLoading = false;
         if (data && data.rooms) {
-          /* Supabase has data — use it as the source of truth.
-             Always replace local state with Supabase data when available. */
+          /* Data-safety merge: if the cloud copy is missing tenants/rooms that
+             exist locally (e.g. the last save failed), the local state is NEWER
+             for those items — merge instead of overwriting, then save the union
+             back up. Prevents a failed save from erasing new tenants forever. */
+          var local = PGStore.state();
+          var cloudRooms = data.rooms || [];
+          var localRooms = local.rooms || [];
+          var cloudIds = {};
+          cloudRooms.forEach(function (r) { cloudIds[r.id] = true; });
+          var missing = localRooms.filter(function (r) { return !cloudIds[r.id]; });
+          var localTenants = 0, cloudTenants = 0;
+          localRooms.forEach(function (r) { (r.beds || []).forEach(function (b) { if (b) localTenants++; }); });
+          cloudRooms.forEach(function (r) { (r.beds || []).forEach(function (b) { if (b) cloudTenants++; }); });
+
+          if (missing.length || localTenants > cloudTenants) {
+            /* Cloud is behind the browser — keep the browser's data. */
+            console.warn("[boot] Cloud behind local (cloud rooms: " + cloudRooms.length +
+              ", local rooms: " + localRooms.length + ") — keeping local data and re-syncing.");
+            renderAll();
+            toast("Using this device's data — cloud copy was out of date.", "info", 4000);
+            dispatchSave();
+            return;
+          }
           PGStore.replaceAll(data);
           renderAll();
+          toast("Synced with cloud.", "success", 2000);
         }
       }).catch(function (e) {
+        cloudLoading = false;
         console.warn("Supabase load failed, using localStorage:", e);
+        dbLocked = true;
+        showDbBanner(true);
+        toast("Database unreachable — all edits blocked. Refresh to retry.", "error", 0);
       });
     }
   }
