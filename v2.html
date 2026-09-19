@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>PG Manager v2 — rebuild preview</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/v2.css">
+  <!-- Supabase (shared client) + config: same project as the legacy app -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="/config.js?v=17"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">PG<span>Manager</span></div>
+    <span id="sync-pill" class="pill pill-synced">synced</span>
+  </header>
+  <!-- Live Sync Ping (bottom-left floating badge; driven by pgv2:sync) -->
+  <button type="button" id="sync-ping" class="sync-ping" aria-live="polite"></button>
+
+  <main id="view"></main>
+
+  <nav class="tabbar" aria-label="Sections">
+    <button class="tab is-active" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="beds">Beds</button>
+    <button class="tab" data-view="rent">Rent</button>
+    <button class="tab" data-view="tenants">Tenants</button>
+  </nav>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <div id="drawer" class="drawer">
+    <div class="drawer-backdrop" data-act="close-drawer"></div>
+    <div class="drawer-panel" role="dialog" aria-modal="true">
+      <div class="drawer-grab"></div>
+      <div class="drawer-head">
+        <h3 id="drawer-title"></h3>
+        <button class="drawer-x" type="button" data-act="close-drawer" aria-label="Close">✕</button>
+      </div>
+      <div id="drawer-body" class="drawer-body"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/app2.js"></script>
+</body>
+</html>

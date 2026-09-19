@@ -211,7 +211,7 @@
      and retry once so the save still goes through instead of failing 5x,
      throwing a permanent failure, and locking the whole app. The migration
      (supabase/migrate-schema.sql) restores the full column set afterwards. */
-  var _schemaFallbacks = {};   /* table -> true, once a column has been stripped */
+  var _schemaFallbacks = {};   /* table -> Set(columns adaptively stripped) */
   var _COL = /column (?:"?\w+"?\.)?"?([a-z_][a-z0-9_]*)"? does not exist/i;
 
   function missingColumn(err) {
@@ -228,27 +228,38 @@
     });
     _inFlight += 1;
     try {
-      try {
-        await withRetry("upsert:" + table, function () {
-          return c.from(table).upsert(toSave, { onConflict: "id" });
-        });
-      } catch (err) {
-        var col = missingColumn(err);
-        if (!col || _schemaFallbacks[table]) { throw err; }
-        /* One-time fallback: drop the offending column from the payload. */
-        _schemaFallbacks[table] = true;
-        emitStorageEvent("schema-fallback", {
-          table: table, column: col,
-          message: "Saving without missing column " + col + " — run supabase/migrate-schema.sql"
-        });
-        var slim = toSave.map(function (r) {
-          var copy = {};
-          for (var k in r) { if (k !== col) { copy[k] = r[k]; } }
-          return copy;
-        });
-        await withRetry("upsert:" + table + "(fallback)", function () {
-          return c.from(table).upsert(slim, { onConflict: "id" });
-        });
+      /* Graceful payload degradation: on 42703 strip the missing column and
+         retry IMMEDIATELY (loop, so multiple schema gaps are all absorbed).
+         Unknown fields are the only cost — the save itself never fails on a
+         column the database does not have yet. */
+      var stripped = _schemaFallbacks[table] = (_schemaFallbacks[table] || new Set());
+      var attempt = toSave;
+      for (;;) {
+        try {
+          await withRetry("upsert:" + table, function () {
+            return c.from(table).upsert(attempt, { onConflict: "id" });
+          });
+          break;
+        } catch (err) {
+          var col = missingColumn(err);
+          if (!col || col === "id" || col === "owner_id" || stripped.has(col)) { throw err; }
+          /* guard: never strip down to nothing */
+          var remaining = attempt.filter(function (r) {
+            return Object.keys(r).some(function (k) { return k !== col && k !== "id" && k !== "owner_id"; });
+          });
+          if (!remaining.length) { throw err; }
+          stripped.add(col);
+          emitStorageEvent("schema-fallback", {
+            table: table, column: col,
+            message: "Saving without missing column " + col + " — run supabase/migrate-schema.sql"
+          });
+          attempt = attempt.map(function (r) {
+            var copy = {};
+            for (var k in r) { if (!stripped.has(k)) { copy[k] = r[k]; } }
+            return copy;
+          });
+          /* loop: retry now with the slimmer payload */
+        }
       }
     } finally {
       _inFlight -= 1;

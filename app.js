@@ -1514,10 +1514,31 @@ function commitNow() {
   dispatchSave();
 }
 
-/* ---- Directive 4: permanent failure → blocking UI + email alert ---- */
+/* ---- Directive 4: permanent failure → surface + email alert ----
+   Blocking modals are RESERVED for data-threatening failures. Recoverable
+   schema gaps (42703 — adaptive stripping already saved the row minus the
+   unknown columns) and ordinary network outages must NEVER block the owner:
+   they route to toasts/banner and the sync retry engine instead. */
 function onPermanentSaveFailure(e) {
   _consecutiveFails += 1;
   var msg = e && e.message ? e.message : "Unknown database error";
+  var isSchemaGap = /column .* does not exist|42703/i.test(msg) ||
+    (e && e.failedTables && e.failedTables.length && /schema/i.test(msg));
+  var isNetworkish = !/column |schema|RLS|permission|duplicate|violates/i.test(msg);
+
+  if (isSchemaGap) {
+    /* Non-fatal: row saved minus unknown fields; the banner (already up)
+       carries the fix instruction. Keep the owner editing. */
+    toast("Saved with reduced fields — run supabase/migrate-schema.sql to sync 100%.", "warn", 6000);
+    _consecutiveFails = 0;            /* do not escalate toward the modal */
+    return;
+  }
+  if (isNetworkish && _criticalFailure) {
+    /* Already modal'ed once — do not re-block on every subsequent network
+       blip; the online/focus auto-retry resumes the sync. */
+    toast("Still offline — changes are safe locally and will sync automatically.", "warn", 5000);
+    return;
+  }
 
   /* Every permanent failure is visible (Directive 5)... */
   toast("Save failed after all retries: " + msg, "error", 8000);
@@ -1556,6 +1577,20 @@ function hideCriticalModal() {
   var m = el("critical-sync-modal");
   if (m) { m.hidden = true; }
 }
+
+/* Auto-resume: when connectivity returns (or the tab regains focus after a
+   suspected outage), retry the failed save automatically instead of leaving
+   the blocking modal up until the user notices. Mirrors the v2 outbox
+   behavior: online event -> drain. */
+window.addEventListener("online", function () {
+  if (_criticalFailure) {
+    toast("Connection back — retrying database save\u2026", "info", 3000);
+    manualRetrySave();
+  }
+});
+window.addEventListener("focus", function () {
+  if (_criticalFailure) { manualRetrySave(); }
+});
 
 /* Manual retry — the button inside the blocking modal */
 function manualRetrySave() {
@@ -1639,6 +1674,19 @@ window.addEventListener("pg:sync-status", function (ev) {
   /* Sync_failed reinforces the banner; synced stands everything down */
   if (d.state === "sync_failed") { showDbBanner(true); }
   if (d.state === "synced" && !_criticalFailure) { showDbBanner(false); }
+  /* Mirror into the bottom-left Live Sync Ping (v2 event channel) so the
+     legacy app drives the same non-blocking indicator. */
+  try {
+    var mapped = { syncing: "draining", synced: "synced", sync_failed: "error", saving: "draining" }[d.state] || null;
+    if (mapped) { window.dispatchEvent(new CustomEvent("pgv2:sync", { detail: { status: mapped, detail: null } })); }
+  } catch (e2) { /* indicator is optional */ }
+});
+
+/* Schema-fallback events (adaptive stripping) -> subtle toast + ping,
+   NEVER a modal. The row IS saved; only unknown fields were dropped. */
+window.addEventListener("pg:storage-schema-fallback", function (ev) {
+  var d = ev.detail || {};
+  toast("Saved minus " + (d.column || "a missing field") + " — run supabase/migrate-schema.sql for full sync.", "warn", 6000);
 });
 
 /* ---- Database warning banner ---- */
