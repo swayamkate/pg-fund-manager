@@ -53,7 +53,7 @@ const EXPECTED = {
   rooms: ["id", "owner_id", "no"],
   beds: ["id", "owner_id", "room_id"],
   floors: ["id", "owner_id", "property_id"],
-  tenants: ["id", "owner_id", "property_id", "name", "bed_id", "status"],
+  tenants: ["id", "owner_id", "property_id", "name", "bed_id", "status", "rent_amount", "collect_day", "deposit"],
   rent_ledger: ["id", "owner_id", "tenant_id", "period", "due", "paid", "status"]
 };
 const struct = {};
