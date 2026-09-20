@@ -1,17 +1,11 @@
-# Cloudflare Pages: the dashboard is a set of plain files with no build step,
-# so a cached copy of one script can leave the site running a mix of old and
-# new code. "no-cache" does not mean "never store" — the browser may keep the
-# file, but it must check with the server before reusing it, so a push shows up
-# on the next load instead of whenever the cache happens to expire.
+# Cloudflare Pages header pinning.
+# One global rule: every file must revalidate with the server before reuse.
+# This is a no-build static site, so a cached script can leave the site
+# running a mix of old and new code - correctness beats a few extra
+# conditional requests, and Cloudflare ETags make revalidation cheap (304s).
+# NOTE: a zone-level Browser Cache TTL (e.g. 4h) can override this header
+# for cacheable types (.js/.css). If curl -I shows max-age=14400 on /app.js
+# again, set Browser Cache TTL to 'Respect Existing Headers' in the dashboard.
 
-/*.js
-  Cache-Control: no-cache, must-revalidate
-
-/*.css
-  Cache-Control: no-cache, must-revalidate
-
-/*.html
-  Cache-Control: no-cache, must-revalidate
-
-/
+/*
   Cache-Control: no-cache, must-revalidate
