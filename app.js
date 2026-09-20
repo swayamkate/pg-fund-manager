@@ -1480,7 +1480,6 @@ function dispatchSave() {
         _criticalFailure = false;
         dbLocked = false;
         hideCriticalModal();
-        showDbBanner(false);
         toast("Database connection restored — all data is synced.", "success", 5000);
       }
     }).catch(function (e) {
@@ -1546,7 +1545,6 @@ function onPermanentSaveFailure(e) {
   if (_consecutiveFails >= 3 || (e && e.isPermanentSaveFailure)) {
     _criticalFailure = true;
     dbLocked = true;
-    showDbBanner(true);
     showCriticalModal(msg);
     /* Directive 4: emergency email dispatch through the Apps Script endpoint */
     if (window.PGSheets && typeof PGSheets.criticalErrorLog === "function") {
@@ -1671,9 +1669,6 @@ function renderSyncStatus(state, detail) {
 window.addEventListener("pg:sync-status", function (ev) {
   var d = ev.detail || {};
   renderSyncStatus(d.state, d.detail);
-  /* Sync_failed reinforces the banner; synced stands everything down */
-  if (d.state === "sync_failed") { showDbBanner(true); }
-  if (d.state === "synced" && !_criticalFailure) { showDbBanner(false); }
   /* Mirror into the bottom-left Live Sync Ping (v2 event channel) so the
      legacy app drives the same non-blocking indicator. */
   try {
@@ -1689,43 +1684,12 @@ window.addEventListener("pg:storage-schema-fallback", function (ev) {
   toast("Saved minus " + (d.column || "a missing field") + " — run supabase/migrate-schema.sql for full sync.", "warn", 6000);
 });
 
-/* ---- Database warning banner ---- */
-function showDbBanner(show) {
-  var banner = el('db-error-banner');
-  if (banner) { banner.hidden = !show; }
-}
-
-/* ---- Startup schema drift banner ----
-   Fired by SupabaseStorage.checkSchema() when the live DB is missing
-   columns the app writes. Warns persistently; saving still works via
-   the adaptive fallback, but fields will be dropped until the
-   migration is run. */
-function showSchemaBanner(drift) {
-  var banner = el("schema-drift-banner");
-  if (!banner) { return; }
-  var missing = (drift || []).filter(function (d) { return d.column; });
-  var other = (drift || []).filter(function (d) { return !d.column; });
-  var parts = [];
-  if (missing.length) {
-    parts.push("Missing columns: " + missing.map(function (d) { return d.table + "." + d.column; }).join(", "));
-  }
-  if (other.length) {
-    parts.push(other.length + " table(s) could not be verified");
-  }
-  var text = parts.join(" · ") + " — run supabase/migrate-schema.sql to fix.";
-  var msg = banner.querySelector(".schema-drift-msg");
-  if (msg) { msg.textContent = text; }
-  banner.hidden = false;
+/* ---- Warning banners removed ----
+   The old top-of-page strips (db-error-banner / schema-drift-banner) are
+   gone; sync state lives in the bottom-left Live Sync Ping badge and
+   toasts only. Schema drift still surfaces as a one-time toast. */
+window.addEventListener("pg:storage-schema-drift", function () {
   toast("Database schema out of date — some fields will not save until the migration runs.", "warn", 8000);
-}
-window.addEventListener("pg:storage-schema-drift", function (ev) {
-  showSchemaBanner(ev.detail && ev.detail.drift);
-});
-/* A later healthy check (e.g. after the migration was run and the owner
-   hits Re-check) clears the banner again. */
-window.addEventListener("pg:storage-schema-ok", function () {
-  var banner = el("schema-drift-banner");
-  if (banner && !banner.hidden) { banner.hidden = true; }
 });
 
 /* Expose for other files (rent.js) that need to trigger a full save. */
@@ -2662,7 +2626,6 @@ function boot(session) {
       e.preventDefault();
       e.stopImmediatePropagation();
       toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
-      showDbBanner(true);
     }
   }, true);
 
@@ -2688,17 +2651,15 @@ function boot(session) {
     SupabaseStorage.init(accountId);
     if (SupabaseStorage.isAvailable()) {
       /* Startup schema check: verify every table has the columns the client
-         writes BEFORE any save can hit a 42703 and lose a field. */
-      SupabaseStorage.checkSchema().then(function (r) {
-        if (r && r.checked && !r.ok) { showSchemaBanner(r.drift); }
-      });
+         writes BEFORE any save can hit a 42703 and lose a field. Drift is
+         surfaced via the pg:storage-schema-drift event listener above. */
+      SupabaseStorage.checkSchema();
       /* Block edits while cloud data is loading to prevent overwrite races */
       var cloudLoading = true;
       SupabaseStorage.healthCheck().then(function (ok) {
         if (!ok) {
           dbLocked = true;
           cloudLoading = false;
-          showDbBanner(true);
           toast("Database unreachable — all edits blocked. Refresh to retry.", "error", 0);
         }
       });
@@ -2736,7 +2697,6 @@ function boot(session) {
         cloudLoading = false;
         console.warn("Supabase load failed, using localStorage:", e);
         dbLocked = true;
-        showDbBanner(true);
         toast("Database unreachable — all edits blocked. Refresh to retry.", "error", 0);
       });
     }

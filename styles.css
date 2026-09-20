@@ -197,48 +197,6 @@ body {
 .tab.is-active .tab-ico { color: var(--brand); }
 .tab:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 
-/* ---------- database error banner ---------- */
-.db-error-banner {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px;
-  background: #fef2f2; border-bottom: 1px solid #fca5a5;
-  color: #991b1b; font-size: 13px; font-weight: 550;
-}
-.db-error-banner svg { flex-shrink: 0; color: #dc2626; }
-.db-error-banner span { flex: 1; }
-.db-error-banner-close {
-  appearance: none; border: 1px solid #fca5a5; background: #fff;
-  border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600;
-  color: #991b1b; cursor: pointer; white-space: nowrap;
-  transition: background .15s ease;
-}
-.db-error-banner-close:hover { background: #fee2e2; }
-[data-theme="dark"] .db-error-banner { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
-[data-theme="dark"] .db-error-banner svg { color: #f87171; }
-[data-theme="dark"] .db-error-banner-close { background: #7f1d1d; border-color: #991b1b; color: #fecaca; }
-[data-theme="dark"] .db-error-banner-close:hover { background: #991b1b; }
-
-/* ---------- schema drift warning banner (startup check) ---------- */
-.schema-drift-banner {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px;
-  background: #fffbeb; border-bottom: 1px solid #fcd34d;
-  color: #92400e; font-size: 13px; font-weight: 550;
-}
-.schema-drift-banner svg { flex-shrink: 0; color: #d97706; }
-.schema-drift-banner .schema-drift-msg { flex: 1; }
-.schema-drift-reload {
-  appearance: none; border: 1px solid #fcd34d; background: #fff;
-  border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600;
-  color: #92400e; cursor: pointer; white-space: nowrap;
-  transition: background .15s ease;
-}
-.schema-drift-reload:hover { background: #fef3c7; }
-[data-theme="dark"] .schema-drift-banner { background: #451a03; border-color: #78350f; color: #fde68a; }
-[data-theme="dark"] .schema-drift-banner svg { color: #fbbf24; }
-[data-theme="dark"] .schema-drift-reload { background: #78350f; border-color: #92400e; color: #fde68a; }
-[data-theme="dark"] .schema-drift-reload:hover { background: #92400e; }
-
 /* ---------- critical sync failure modal (data safety directive 3) ---------- */
 .csm-overlay {
   position: fixed; inset: 0; z-index: 9999;

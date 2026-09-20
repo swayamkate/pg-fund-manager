@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="styles.css?v=20" />
-<link rel="stylesheet" href="manage.css?v=20" />
-<link rel="stylesheet" href="analytics.css?v=20" />
+<link rel="stylesheet" href="styles.css?v=21" />
+<link rel="stylesheet" href="manage.css?v=21" />
+<link rel="stylesheet" href="analytics.css?v=21" />
 <style>
 html.auth-pending body{visibility:hidden}
 /* Loading skeleton — shown while JS boots */
@@ -43,11 +43,11 @@ html.auth-pending body{visibility:hidden}
 <!-- Smart import: OCR for images and PDF text extraction -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js?v=20"></script>
-<script src="supabase-storage.js?v=20"></script>
-<script src="auth.js?v=20"></script>
-<script src="store.js?v=20"></script>
-<script src="sheets.js?v=20"></script>
+<script src="config.js?v=21"></script>
+<script src="supabase-storage.js?v=21"></script>
+<script src="auth.js?v=21"></script>
+<script src="store.js?v=21"></script>
+<script src="sheets.js?v=21"></script>
 <script>
   // Unregister any old service workers that may be serving stale cache.
   // SW is disabled — all files load fresh from the network every time.
@@ -182,20 +182,6 @@ html.auth-pending body{visibility:hidden}
         </div>
       </div>
     </header>
-
-    <!-- Database error banner -->
-    <!-- Startup schema drift warning: live DB missing columns the app writes -->
-    <div id="schema-drift-banner" class="schema-drift-banner" hidden role="alert">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span class="schema-drift-msg">Database schema out of date — run supabase/migrate-schema.sql.</span>
-      <button class="schema-drift-reload" onclick="location.reload()" type="button">↻ Re-check</button>
-    </div>
-
-    <div id="db-error-banner" class="db-error-banner" hidden>
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span>Database connection lost — data is saving locally only. Refresh to retry.</span>
-      <button class="db-error-banner-close" onclick="location.reload()" type="button">↻ Retry</button>
-    </div>
 
     <!-- Critical sync failure modal (Directive 3) -->
     <div id="critical-sync-modal" class="csm-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="csm-title">
@@ -1092,11 +1078,11 @@ html.auth-pending body{visibility:hidden}
   </div>
 </dialog>
 
-<script src="analytics.js?v=20"></script>
-<script src="app.js?v=20"></script>
-<script src="import.js?v=20"></script>
-<script src="profile.js?v=20"></script>
-<script src="account.js?v=20"></script>
-<script src="rent.js?v=20"></script>
+<script src="analytics.js?v=21"></script>
+<script src="app.js?v=21"></script>
+<script src="import.js?v=21"></script>
+<script src="profile.js?v=21"></script>
+<script src="account.js?v=21"></script>
+<script src="rent.js?v=21"></script>
 </body>
 </html>
