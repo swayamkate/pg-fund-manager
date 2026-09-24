@@ -197,26 +197,6 @@ body {
 .tab.is-active .tab-ico { color: var(--brand); }
 .tab:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 
-/* ---------- critical sync failure modal (data safety directive 3) ---------- */
-.csm-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0, 0, 0, .6); backdrop-filter: blur(4px);
-  padding: var(--sp-4);
-}
-.csm-card {
-  background: var(--surface); border: 2px solid var(--red); border-radius: 16px;
-  box-shadow: 0 20px 60px -12px rgba(0, 0, 0, .5);
-  max-width: 440px; width: 100%; padding: 28px 24px;
-  text-align: center;
-}
-.csm-icon { font-size: 40px; margin-bottom: 10px; }
-.csm-card h3 { margin: 0 0 10px; font-size: 18px; color: var(--red); }
-.csm-body { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: var(--text); }
-.csm-detail { margin: 0 0 8px; font-size: 12px; word-break: break-word; }
-.csm-hint { margin: 0 0 18px; font-size: 12px; line-height: 1.5; }
-.csm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-
 /* ---------- sync status pill (data safety directive 2) ---------- */
 .sync-pill {
   flex: none; display: inline-flex; align-items: center; gap: 6px;

@@ -1436,8 +1436,7 @@ function renderBackup(s) {
    Directive 5: every failure surfaces as a toast — no silent catches
    ================================================================ */
 var _commitTimer = null;
-var dbLocked = false;          /* hard lock: edits blocked after permanent failure */
-var _criticalFailure = false;  /* at least one save has failed permanently */
+var _criticalFailure = false;  /* at least one save has failed permanently (drives toasts + auto-retry) */
 var _consecutiveFails = 0;
 
 function dbSyncBusy() {
@@ -1456,8 +1455,7 @@ window.addEventListener("beforeunload", function (e) {
   if (dbSyncBusy() || _criticalFailure) {
     var msg = _criticalFailure
       ? "A database save FAILED. Closing now may LOSE your latest changes."
-      : "Your latest changes are still being saved.";
-    e.preventDefault();
+      : "Your latest changes are still being saved.";    e.preventDefault();
     e.returnValue = msg; /* Chrome/Edge */
     return msg;          /* Firefox/Safari */
   }
@@ -1478,8 +1476,6 @@ function dispatchSave() {
       if (_criticalFailure) {
         /* A previously failing save finally went through — stand down. */
         _criticalFailure = false;
-        dbLocked = false;
-        hideCriticalModal();
         toast("Database connection restored — all data is synced.", "success", 5000);
       }
     }).catch(function (e) {
@@ -1489,10 +1485,6 @@ function dispatchSave() {
 }
 
 function commit() {
-  if (dbLocked && !_criticalFailure) {
-    toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
-    return;
-  }
   /* Debounce: if multiple changes happen within 30ms, only render once. */
   if (_commitTimer) { clearTimeout(_commitTimer); }
   _commitTimer = setTimeout(function () {
@@ -1504,10 +1496,6 @@ function commit() {
 
 /* Immediate commit — bypasses debounce, used for critical saves. */
 function commitNow() {
-  if (dbLocked && !_criticalFailure) {
-    toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
-    return;
-  }
   if (_commitTimer) { clearTimeout(_commitTimer); _commitTimer = null; }
   renderAll();
   dispatchSave();
@@ -1544,8 +1532,9 @@ function onPermanentSaveFailure(e) {
 
   if (_consecutiveFails >= 3 || (e && e.isPermanentSaveFailure)) {
     _criticalFailure = true;
-    dbLocked = true;
-    showCriticalModal(msg);
+    /* No blocking modal, no edit lock: changes stay safe locally and auto-retry
+       when connectivity returns; the user just sees a toast. */
+    toast("Database save failed — changes are saved locally and will retry automatically. Keep this tab open if possible.", "warn", 8000);
     /* Directive 4: emergency email dispatch through the Apps Script endpoint */
     if (window.PGSheets && typeof PGSheets.criticalErrorLog === "function") {
       PGSheets.criticalErrorLog({
@@ -1559,27 +1548,8 @@ function onPermanentSaveFailure(e) {
   }
 }
 
-/* ---- Directive 3: blocking modal ---- */
-function showCriticalModal(message) {
-  var m = el("critical-sync-modal");
-  if (!m) {
-    console.error("[CRITICAL]", message);
-    return;
-  }
-  m.hidden = false;
-  var detail = m.querySelector(".csm-detail");
-  if (detail) { detail.textContent = message; }
-}
-
-function hideCriticalModal() {
-  var m = el("critical-sync-modal");
-  if (m) { m.hidden = true; }
-}
-
 /* Auto-resume: when connectivity returns (or the tab regains focus after a
-   suspected outage), retry the failed save automatically instead of leaving
-   the blocking modal up until the user notices. Mirrors the v2 outbox
-   behavior: online event -> drain. */
+   suspected outage), retry the failed save automatically.
 window.addEventListener("online", function () {
   if (_criticalFailure) {
     toast("Connection back — retrying database save\u2026", "info", 3000);
@@ -1590,34 +1560,11 @@ window.addEventListener("focus", function () {
   if (_criticalFailure) { manualRetrySave(); }
 });
 
-/* Manual retry — the button inside the blocking modal */
 function manualRetrySave() {
   toast("Retrying database save\u2026", "info", 3000);
   _consecutiveFails = 0;
-  dbLocked = false;
   commitNow();
 }
-
-/* Modal buttons (deferred to DOMContentLoaded-safe wiring — the modal exists
-   in static HTML, so direct wiring at script eval is fine). */
-(function wireCriticalModal() {
-  var retryBtn = el("csm-retry");
-  if (retryBtn) {
-    retryBtn.addEventListener("click", function () {
-      hideCriticalModal();
-      manualRetrySave();
-    });
-  }
-  var laterBtn = el("csm-later");
-  if (laterBtn) {
-    laterBtn.addEventListener("click", function () {
-      /* Dismiss the dialog but KEEP the failure state: beforeunload stays
-         armed so closing the tab still warns about unsynced data. */
-      hideCriticalModal();
-      toast("Reminder: your changes are NOT synced to the database yet.", "warn", 8000);
-    });
-  }
-})();
 
 /* ---- Directive 2 telemetry: retry chatter surfaces as soft toasts ---- */
 window.addEventListener("pg:storage-retrying", function (ev) {
@@ -1696,7 +1643,7 @@ window.addEventListener("pg:storage-schema-drift", function () {
 window.PGRender = {
   commit: commit,
   commitNow: commitNow,
-  isDbLocked: function () { return dbLocked; },
+  isDbLocked: function () { return false; },
   isSyncBusy: dbSyncBusy,
   manualRetrySave: manualRetrySave
 };
@@ -2620,15 +2567,6 @@ function boot(session) {
   PGStore.use(accountId);
   window.PG_SESSION = { name: name, id: accountId };
 
-  /* ---- Block all data-mutating forms when DB is locked ---- */
-  document.addEventListener("submit", function (e) {
-    if (dbLocked) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      toast("Database connection lost — cannot save. Refresh the page to retry.", "error", 6000);
-    }
-  }, true);
-
   if (window.PGSheets) {
     PGSheets.use(accountId);
     PGSheets.onStatus(renderBackup);
@@ -2654,13 +2592,11 @@ function boot(session) {
          writes BEFORE any save can hit a 42703 and lose a field. Drift is
          surfaced via the pg:storage-schema-drift event listener above. */
       SupabaseStorage.checkSchema();
-      /* Block edits while cloud data is loading to prevent overwrite races */
       var cloudLoading = true;
       SupabaseStorage.healthCheck().then(function (ok) {
         if (!ok) {
-          dbLocked = true;
           cloudLoading = false;
-          toast("Database unreachable — all edits blocked. Refresh to retry.", "error", 0);
+          toast("Database unreachable — changes are saved locally and will sync when it's back.", "warn", 6000);
         }
       });
       SupabaseStorage.load().then(function (data) {
@@ -2696,8 +2632,7 @@ function boot(session) {
       }).catch(function (e) {
         cloudLoading = false;
         console.warn("Supabase load failed, using localStorage:", e);
-        dbLocked = true;
-        toast("Database unreachable — all edits blocked. Refresh to retry.", "error", 0);
+        toast("Database unreachable — using saved local data. Will sync when it's back.", "warn", 6000);
       });
     }
   }

@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="styles.css?v=21" />
-<link rel="stylesheet" href="manage.css?v=21" />
-<link rel="stylesheet" href="analytics.css?v=21" />
+<link rel="stylesheet" href="styles.css?v=22" />
+<link rel="stylesheet" href="manage.css?v=22" />
+<link rel="stylesheet" href="analytics.css?v=22" />
 <style>
 html.auth-pending body{visibility:hidden}
 /* Loading skeleton — shown while JS boots */
@@ -43,11 +43,11 @@ html.auth-pending body{visibility:hidden}
 <!-- Smart import: OCR for images and PDF text extraction -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js?v=21"></script>
-<script src="supabase-storage.js?v=21"></script>
-<script src="auth.js?v=21"></script>
-<script src="store.js?v=21"></script>
-<script src="sheets.js?v=21"></script>
+<script src="config.js?v=22"></script>
+<script src="supabase-storage.js?v=22"></script>
+<script src="auth.js?v=22"></script>
+<script src="store.js?v=22"></script>
+<script src="sheets.js?v=22"></script>
 <script>
   // Unregister any old service workers that may be serving stale cache.
   // SW is disabled — all files load fresh from the network every time.
@@ -182,21 +182,6 @@ html.auth-pending body{visibility:hidden}
         </div>
       </div>
     </header>
-
-    <!-- Critical sync failure modal (Directive 3) -->
-    <div id="critical-sync-modal" class="csm-overlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="csm-title">
-      <div class="csm-card">
-        <div class="csm-icon">⚠️</div>
-        <h3 id="csm-title">Critical Sync Warning</h3>
-        <p class="csm-body">Database save failed. Check your internet connection. <b>Do not close this tab.</b></p>
-        <p class="csm-detail muted-sm"></p>
-        <p class="csm-hint muted-sm">Your latest changes are safe in this browser and in the local backup, but they have NOT reached the cloud database yet.</p>
-        <div class="csm-actions">
-          <button class="btn-primary btn-sm" type="button" id="csm-retry">Retry Now</button>
-          <button class="btn-ghost btn-sm" type="button" id="csm-later">Keep editing (stay on this tab)</button>
-        </div>
-      </div>
-    </div>
 
     <main class="wrap" id="main">
 
@@ -1078,11 +1063,11 @@ html.auth-pending body{visibility:hidden}
   </div>
 </dialog>
 
-<script src="analytics.js?v=21"></script>
-<script src="app.js?v=21"></script>
-<script src="import.js?v=21"></script>
-<script src="profile.js?v=21"></script>
-<script src="account.js?v=21"></script>
-<script src="rent.js?v=21"></script>
+<script src="analytics.js?v=22"></script>
+<script src="app.js?v=22"></script>
+<script src="import.js?v=22"></script>
+<script src="profile.js?v=22"></script>
+<script src="account.js?v=22"></script>
+<script src="rent.js?v=22"></script>
 </body>
 </html>
