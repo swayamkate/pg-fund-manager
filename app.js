@@ -1549,7 +1549,7 @@ function onPermanentSaveFailure(e) {
 }
 
 /* Auto-resume: when connectivity returns (or the tab regains focus after a
-   suspected outage), retry the failed save automatically.
+   suspected outage), retry the failed save automatically. */
 window.addEventListener("online", function () {
   if (_criticalFailure) {
     toast("Connection back — retrying database save\u2026", "info", 3000);
