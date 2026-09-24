@@ -1,12 +1,12 @@
 /* v2.css — rebuilt UI (mobile-first, lightweight). */
 
 :root {
-  --bg: #f4f6f8; --card: #fff; --line: #e3e8ee; --ink: #17222e; --mut: #64748b;
+  --bg: #f7f8fa; --card: #ffffff; --line: #e6eaf0; --ink: #111827; --mut: #6b7280;
   --acc: #1668dc; --acc-ink: #fff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
-  --shadow-sm: 0 1px 2px rgba(16, 32, 48, .05);
-  --shadow-md: 0 4px 14px -4px rgba(16, 32, 48, .12);
+  --shadow-sm: 0 1px 3px rgba(16, 32, 48, .06);
+  --shadow-md: 0 4px 16px -4px rgba(16, 32, 48, .14);
   --r-lg: 16px; --r-md: 12px;
-  --chip-vacant: #e7f8ee; --chip-vacant-ink: #157347;
+  --chip-vacant: #e9f9ef; --chip-vacant-ink: #157347;
   --chip-occ: #e8f0fe; --chip-occ-ink: #1a56c4;
   --chip-notice: #fdf3e2; --chip-notice-ink: #b45309;
   --chip-over: #fdeaea; --chip-over-ink: #b91c1c;
