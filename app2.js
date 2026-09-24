@@ -5,7 +5,7 @@
 
 import { store, sync, db } from "./store/index.js";
 import { realtime } from "./store/index.js";
-import { initDashboard, render as renderDashboard } from "./views/dashboard.js";
+import { initDashboard, wireQuickNav, render as renderDashboard } from "./views/dashboard.js";
 import { initBeds } from "./views/beds.js";
 import { initRent } from "./views/rent.js";
 import { initTenants } from "./views/tenants.js";
@@ -19,6 +19,10 @@ const views = {};
 
 async function start() {
   wireShell();
+  wireQuickNav(
+    () => document.querySelector('.tab[data-view="beds"]').click(),
+    () => document.querySelector('.tab[data-view="rent"]').click()
+  );
 
   /* Live Sync Ping: bottom-left badge mirroring store/sync.js state. */
   initSyncPing({ store, realtime, toast });
@@ -124,13 +128,35 @@ function wireShell() {
   window.addEventListener("pgv2:storage-error", (e) => toast(e.detail, "error", 6000));
 }
 
+let currentView = "dashboard";
+
 function mount(name) {
   const host = $("view");
   host.replaceChildren();
+  currentView = name;
   if (name === "beds" && views.beds) { views.beds(host); }
   else if (name === "rent" && views.rent) { views.rent(host); }
   else if (name === "tenants" && views.tenants) { views.tenants(host); }
   else if (views.dashboard) { views.dashboard(host); }
+  updateFab();
+}
+
+/* Context-aware FAB: only where an add action makes sense. */
+function updateFab() {
+  const fab = $("fab");
+  if (!fab) { return; }
+  if (currentView === "beds") {
+    fab.hidden = false;
+    fab.setAttribute("aria-label", "Add room");
+    fab.onclick = () => document.querySelector(".add-room-btn").click();
+  } else if (currentView === "dashboard") {
+    fab.hidden = false;
+    fab.setAttribute("aria-label", "Go to beds");
+    fab.onclick = () => document.querySelector('.tab[data-view="beds"]').click();
+  } else {
+    fab.hidden = true;
+    fab.onclick = null;
+  }
 }
 
 function renderSyncPill({ status }) {

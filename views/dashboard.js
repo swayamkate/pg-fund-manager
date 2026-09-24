@@ -6,6 +6,9 @@ import { store, mutations } from "../store/index.js";
 import { esc, money, el } from "./ui.js";
 
 let host = null;
+let goBeds = null;   // shell-wired quick-nav (set by app2.js)
+let goRent = null;
+export function wireQuickNav(bedsFn, rentFn) { goBeds = bedsFn; goRent = rentFn; }
 
 export function initDashboard(container) {
   host = container;
@@ -62,6 +65,17 @@ export function render(rpcStats) {
   fill.style.width = occ + "%";
   bar.appendChild(fill);
   host.appendChild(el("p", "occ-note", esc(occupied + " of " + live.length + " beds filled")));
+
+  /* quick actions: one tap to the two most common tasks */
+  const quick = el("div", "quick");
+  const q1 = el("button", "btn btn-primary", "Manage beds");
+  q1.type = "button";
+  q1.addEventListener("click", () => goBeds && goBeds());
+  const q2 = el("button", "btn", "Mark rent");
+  q2.type = "button";
+  q2.addEventListener("click", () => goRent && goRent());
+  quick.append(q1, q2);
+  host.appendChild(quick);
 
   function stat(label, value, sub) {
     const c = el("div", "stat-card");

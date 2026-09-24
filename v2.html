@@ -22,11 +22,12 @@
   <main id="view"></main>
 
   <nav class="tabbar" aria-label="Sections">
-    <button class="tab is-active" data-view="dashboard">Dashboard</button>
-    <button class="tab" data-view="beds">Beds</button>
-    <button class="tab" data-view="rent">Rent</button>
-    <button class="tab" data-view="tenants">Tenants</button>
+    <button class="tab is-active" data-view="dashboard"><span class="tab-ico" aria-hidden="true">⌂</span>Dashboard</button>
+    <button class="tab" data-view="beds"><span class="tab-ico" aria-hidden="true">🛏</span>Beds</button>
+    <button class="tab" data-view="rent"><span class="tab-ico" aria-hidden="true">₹</span>Rent</button>
+    <button class="tab" data-view="tenants"><span class="tab-ico" aria-hidden="true">👥</span>Tenants</button>
   </nav>
+  <button type="button" id="fab" class="fab" aria-label="Add room" hidden>＋</button>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
 
