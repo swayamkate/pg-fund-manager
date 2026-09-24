@@ -54,8 +54,23 @@ const PARKED_RE = /relation .* does not exist|schema cache|could not find the ta
    column is dropped and the write retried immediately (graceful payload
    degradation), instead of parking/failing the sync. */
 const MISSING_COL_RE = /column (?:"?\w+"?\.)?"?([a-z_][a-z0-9_]*)"? does not exist/i;
+/* Some live tables were created without `updated_at` (properties, and older
+   rooms/beds deployments). Sending it fails with a PL/pgSQL 42703
+   `record has no field "updated_at"` from the touch trigger, which the
+   regex-based stripper can't match. preparePayloadForTable drops it up front
+   for the known-affected tables; the adaptive stripper covers the rest. */
+const NO_UPDATED_AT_TABLES = new Set(["properties", "rooms", "beds"]);
+function preparePayloadForTable(table, record) {
+  if (!NO_UPDATED_AT_TABLES.has(table)) { return record; }
+  const row = { ...record };
+  delete row.updated_at;
+  return row;
+}
+
+const NO_FIELD_RE = /record has no field "?([a-z_][a-z0-9_]*)"?/i;
 function missingColumn(err) {
-  const m = err && err.message ? String(err.message).match(MISSING_COL_RE) : null;
+  const msg = err && err.message ? String(err.message) : "";
+  const m = msg.match(MISSING_COL_RE) || msg.match(NO_FIELD_RE);
   return m ? m[1] : null;
 }
 /* Strip one or more missing columns from rows; returns null if nothing left. */
@@ -252,7 +267,7 @@ export function createSync(db, storage, getClient, emit) {
       let n = 0;
       while (start + n < outbox.length && n < BATCH_MAX && outbox[start + n].table === table && outbox[start + n].action === "UPSERT") { n++; }
       const items = outbox.slice(start, start + n);
-      return { table, items, rows: items.map((m) => ({ ...m.payload, updated_at: m.payload.updated_at || m.timestamp })) };
+      return { table, items, rows: items.map((m) => preparePayloadForTable(table, { ...m.payload, updated_at: m.payload.updated_at || m.timestamp })) };
     };
     const removeFrombox = (start, count) => { outbox.splice(start, count); persistOutbox(); };
     let parkedSeen = false;                 // any head-of-queue park this pass?
@@ -275,7 +290,7 @@ export function createSync(db, storage, getClient, emit) {
             // other columns; update() only patches deleted_at.
             const full = m.payload && Object.keys(m.payload).length > 3;
             if (full) {
-              let row = { ...m.payload, updated_at: m.payload.updated_at || m.timestamp };
+              let row = preparePayloadForTable(m.table, { ...m.payload, updated_at: m.payload.updated_at || m.timestamp });
               for (;;) {
                 const { error } = await client.from(m.table).upsert(row, { onConflict: "id", ignoreDuplicates: false });
                 if (!error) { break; }
@@ -284,7 +299,8 @@ export function createSync(db, storage, getClient, emit) {
                 row = { ...row }; delete row[col];   // adaptive strip, retry now
               }
             } else {
-              const { error } = await client.from(m.table).update({ deleted_at: m.payload.deleted_at || m.timestamp, updated_at: m.timestamp }).eq("id", m.payload.id);
+              const patch = preparePayloadForTable(m.table, { deleted_at: m.payload.deleted_at || m.timestamp, updated_at: m.timestamp });
+              const { error } = await client.from(m.table).update(patch).eq("id", m.payload.id);
               if (error) { throw Object.assign(new Error(error.message || "soft delete failed"), { code: error.code }); }
             }
             outbox.splice(i, 1);                     // success: remove, stay at i
@@ -320,7 +336,7 @@ export function createSync(db, storage, getClient, emit) {
                 let done = 0;                          // rows resolved this batch
                 while (done < items.length && outbox[i] && outbox[i].table === table && outbox[i].action === "UPSERT") {
                   const one = outbox[i];
-                  let r = { ...one.payload, updated_at: one.payload.updated_at || one.timestamp };
+                  let r = preparePayloadForTable(table, { ...one.payload, updated_at: one.payload.updated_at || one.timestamp });
                   let err1 = null;
                   for (;;) {                          // per-row adaptive strip too
                     const res1 = await client.from(table).upsert(r, { onConflict: "id", ignoreDuplicates: false });
