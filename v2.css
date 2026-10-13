@@ -289,8 +289,8 @@ body {
   .sync-ping[data-anim="blink"] .ping-dot { animation: none; }
 }
 
-/* Teal dashboard refresh */
-:root { --bg: #f3f6f5; --card: #fff; --line: #dfe8e3; --ink: #172c26; --mut: #52675e; --acc: #087f68; --r-lg: 20px; }
+/* White and light-blue dashboard refresh */
+:root { --bg: #f5f9ff; --card: #fff; --line: #e1eaf5; --ink: #182c47; --mut: #526782; --acc: #246fbb; --r-lg: 20px; }
 .topbar { padding: 18px 20px; }
 .brand { letter-spacing: -.6px; font-size: 20px; }
 #view { padding-top: 24px; }
@@ -304,5 +304,5 @@ body {
   .topbar { padding-left: max(32px, calc((100vw - 936px) / 2)); padding-right: max(32px, calc((100vw - 936px) / 2)); }
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #101c19; --card: #182823; --line: #2b4138; --ink: #edf6f1; --mut: #adc5b9; --acc: #65d9b7; --acc-ink: #101c19; }
+  :root { --bg: #101d30; --card: #182b43; --line: #2b4563; --ink: #edf5ff; --mut: #adc5e0; --acc: #88c9ff; --acc-ink: #101d30; }
 }
