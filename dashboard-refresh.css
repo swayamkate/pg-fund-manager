@@ -1,0 +1,88 @@
+/* Shared dashboard refresh: existing controls and responsive layout stay intact. */
+:root, [data-theme="light"] {
+  --bg: #f3f6f5;
+  --bg-accent: none;
+  --surface: #fff;
+  --surface-2: #eef3f1;
+  --surface-3: #dce7e2;
+  --border: #e0e8e4;
+  --border-strong: #bccfc6;
+  --text: #172c26;
+  --muted: #52675e;
+  --faint: #63786e;
+  --brand: #087f68;
+  --brand-hover: #056652;
+  --brand-soft: #e1f3ec;
+  --brand-grad: linear-gradient(135deg, #11967b, #08705d);
+  --ring: rgb(8 127 104 / .18);
+  --shadow-sm: 0 2px 4px rgb(23 44 38 / .025);
+  --shadow-md: 0 8px 28px -16px rgb(23 44 38 / .15);
+  --shadow-lg: 0 16px 38px -20px rgb(23 44 38 / .22);
+  --radius-lg: 20px;
+  --sidebar-w: 246px;
+  --topbar-h: 72px;
+}
+[data-theme="dark"] {
+  --bg: #101c19;
+  --bg-accent: none;
+  --surface: #182823;
+  --surface-2: #21382f;
+  --surface-3: #304a40;
+  --border: #2b4138;
+  --border-strong: #466356;
+  --text: #edf6f1;
+  --muted: #adc5b9;
+  --faint: #91afa0;
+  --brand: #65d9b7;
+  --brand-hover: #89e9ca;
+  --brand-soft: #21473a;
+  --brand-grad: linear-gradient(135deg, #11967b, #08705d);
+  --ring: rgb(101 217 183 / .22);
+}
+.page-head h1 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -.045em; }
+.page-head { margin-bottom: 28px; align-items: center; }
+.dashboard-eyebrow { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--brand); text-transform: uppercase; }
+.card { border-radius: 20px; box-shadow: var(--shadow-sm); }
+.card-head h2 { letter-spacing: -.025em; }
+.stat { border-radius: 18px; box-shadow: var(--shadow-sm); }
+.stat::after { display: none; }
+.stat-value { font-size: clamp(24px, 2.7vw, 34px); letter-spacing: -.04em; }
+.stat-ico { border-radius: 12px; width: 38px; height: 38px; }
+.stat:hover { transform: none; box-shadow: var(--shadow-md); }
+.stamp { background: var(--surface); border: 1px solid var(--border); padding: 9px 13px; border-radius: 10px; }
+.btn-primary { background-image: none; background-color: var(--brand); color: #fff; box-shadow: none; border-radius: 11px; }
+[data-theme="dark"] .btn-primary { color: #101c19; }
+.btn-primary:hover { background-image: none; background-color: var(--brand-hover); }
+.btn-ghost, .icon-btn { box-shadow: none; }
+.table th { background: var(--surface-2); }
+.setup { border: 1px solid var(--border-strong); background: var(--brand-soft); }
+.dashboard-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 24px; }
+.dashboard-actions button { display: inline-flex; align-items: center; gap: 8px; }
+.dashboard-actions svg { width: 16px; height: 16px; }
+@media (min-width: 641px) {
+  .sidebar { background: #142e28; color: #f0f7f3; border-right: 0; }
+  .sidebar-in { padding: 28px 16px 20px; gap: 20px; }
+  .sidebar .brand { padding: 0 8px 20px; border-bottom: 1px solid #345047; }
+  .sidebar .brand-text small { color: #b0c8bd; margin-top: 5px; }
+  .sidebar .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: #b5ead2; color: #173c30; box-shadow: none; }
+  .sidebar .tab { color: #c0d3ca; padding: 12px 14px; border-radius: 10px; margin: 2px 0; }
+  .sidebar .tab .tab-ico { color: #9cb8a9; }
+  .sidebar .tab:hover { background: #24463a; color: #fff; }
+  .sidebar .tab.is-active { background: #c0ecd7; color: #173c30; box-shadow: none; }
+  .sidebar .tab.is-active .tab-ico { color: #173c30; }
+  .sidebar-foot { color: #b0c8bd; border-color: #345047; }
+  main.wrap { padding-top: 36px; }
+  .topbar { backdrop-filter: none; background: var(--surface); }
+  .card { padding: 24px; }
+  .card.table-card { padding: 0; }
+  .stat { padding: 22px; }
+}
+@media (max-width: 640px) {
+  .page-head { gap: 12px; align-items: flex-start; margin-bottom: 20px; }
+  .dashboard-eyebrow { font-size: 10px; margin-bottom: 6px; }
+  .stamp { max-width: 112px; font-size: 11px; text-align: right; }
+  .dashboard-actions { gap: 8px; margin: 0 0 20px; }
+  .dashboard-actions button { flex: 1 1 130px; min-height: 44px; padding: 9px 12px; }
+  .card, .stat { border-radius: 16px; }
+  .tabs .tab.is-active { box-shadow: none; }
+}
