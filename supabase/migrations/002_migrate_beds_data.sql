@@ -51,8 +51,9 @@ UPDATE rooms r
 SET property_id = pr.id,
     floor_id    = f.id
 FROM properties pr
-JOIN floors f ON f.property_id = pr.id AND f.level = r.floor
+JOIN floors f ON f.property_id = pr.id
 WHERE r.owner_id = pr.owner_id
+  AND f.level = r.floor
   AND (r.property_id IS NULL OR r.floor_id IS NULL);
 
 -- STEP 4 — link beds to their property (leaves legacy columns intact)
@@ -127,7 +128,7 @@ JOIN beds b      ON b.id = t.bed_id
 JOIN rooms r     ON r.id = b.room_id
 CROSS JOIN LATERAL unnest(coalesce(b.paid_months, '{}')) AS m(month)
 LEFT JOIN LATERAL (
-  SELECT b.payment_info ->> m.month AS info
+  SELECT b.payment_info -> m.month AS info
   WHERE b.payment_info ? m.month
 ) t_info ON true
 ON CONFLICT (tenant_id, period) DO NOTHING;      -- re-runs never duplicate months
