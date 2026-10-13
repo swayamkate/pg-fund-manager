@@ -135,10 +135,10 @@
     bed.paidMonths.sort();
     if (paymentDate || utr) {
       if (!bed.paymentInfo) { bed.paymentInfo = {}; }
-      bed.paymentInfo[month] = {
+      bed.paymentInfo[month] = Object.assign({}, bed.paymentInfo[month], {
         date: paymentDate || new Date().toISOString().slice(0, 10),
         utr: utr || ""
-      };
+      });
     }
     return true;
   }
@@ -147,7 +147,11 @@
     if (!isArray(bed.paidMonths)) { bed.paidMonths = []; return false; }
     var before = bed.paidMonths.length;
     bed.paidMonths = bed.paidMonths.filter(function (m) { return m !== month; });
-    if (bed.paymentInfo && bed.paymentInfo[month]) { delete bed.paymentInfo[month]; }
+    if (bed.paymentInfo && bed.paymentInfo[month]) {
+      /* Keep this month's agreed rent when undoing a payment. */
+      delete bed.paymentInfo[month].date;
+      delete bed.paymentInfo[month].utr;
+    }
     return bed.paidMonths.length !== before;
   }
 
@@ -175,6 +179,22 @@
     });
   }
 
+  function expenseValues(data, defaultDate) {
+    data = data || {};
+    var amount = Number(data.amount);
+    if (!isFinite(amount) || !(amount > 0)) {
+      return { ok: false, error: "Enter a valid amount above zero." };
+    }
+    var date = clean(data.date, 24) || (defaultDate ? today() : "");
+    var parsed = new Date(date + "T00:00:00Z");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date.slice(0, 4) === "0000" ||
+        isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      return { ok: false, error: "Choose a valid expense date." };
+    }
+    return { ok: true, amount: amount, date: date,
+      category: clean(data.category, 30) || "Other", note: clean(data.note, 80) };
+  }
+
   /* Dearest first, so the rate card reads like a price list. */
   function sortRates(list) {
     list.sort(function (a, b) { return b.amount - a.amount; });
@@ -193,6 +213,40 @@
       return Math.max(0, Number(bed.rent));
     }
     return room && room.rent != null ? Math.max(0, Number(room.rent)) : 0;
+  }
+
+  function isComplaintDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1) { return false; }
+    var parsed = new Date(value + "T00:00:00.000Z");
+    return !isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }
+
+  function monthRent(room, bed, month) {
+    var info = bed && bed.paymentInfo && bed.paymentInfo[month];
+    if (info && info.rent != null && info.rent !== "" && isFinite(Number(info.rent))) {
+      return Math.max(0, Number(info.rent));
+    }
+    return effectiveRent(room, bed);
+  }
+
+  /* Retain old monthly rates before changing a room or tenant's current rent. */
+  function freezePastRent(room, bed) {
+    if (!bed) { return; }
+    var current = thisMonth();
+    var months = monthsBetween(bed.joined || today(), billedTo(bed));
+    months = months.concat(bed.paidMonths || [], Object.keys(bed.paymentInfo || {}));
+    if (!bed.paymentInfo) { bed.paymentInfo = {}; }
+    months.forEach(function (month) {
+      if (!isMonth(month) || (month >= current && !hasMonth(bed, month))) { return; }
+      var rent = monthRent(room, bed, month);
+      bed.paymentInfo[month] = Object.assign({}, bed.paymentInfo[month], { rent: rent });
+    });
+  }
+
+  function validPaymentDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) { return false; }
+    var date = new Date(value + "T00:00:00Z");
+    return !isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
   }
 
   /* Rebuild whatever was in storage into a shape the app can trust. */
@@ -263,7 +317,7 @@
             if (!b || typeof b !== "object") { return null; }
 
             var months = isArray(b.paidMonths)
-              ? b.paidMonths.filter(isMonth).slice(0, 240).sort()
+              ? b.paidMonths.filter(isMonth).slice(0, 600).sort()
               : [];
 
             /* Backups written before the ledger existed carry a single "paid"
@@ -314,7 +368,8 @@
           cost: Math.max(0, Number(c.cost) || 0),
           note: clean(c.note, 200),
           date: clean(c.date, 24) || today(),
-          resolvedAt: clean(c.resolvedAt, 24)
+          resolvedAt: clean(c.resolvedAt, 24),
+          expenseId: clean(c.expenseId, 80)
         };
       }).slice(0, 200);
     }
@@ -473,6 +528,7 @@
     bedLabel: bedLabel,
 
     effectiveRent: effectiveRent,
+    monthRent: monthRent,
 
     setProperty: function (name) {
       state.property = clean(name, 60);
@@ -572,6 +628,9 @@
       if (!name) { return { ok: false, error: "Enter the tenant's name." }; }
 
       var before = bed.name;
+      if (data.rent !== undefined && (data.rent === "" ? null : Number(data.rent)) !== bed.rent) {
+        freezePastRent(target, bed);
+      }
       bed.name = name;
       bed.phone = clean(data.phone, 24);
       bed.joined = clean(data.joined, 24);
@@ -612,6 +671,7 @@
       if (dstRoom.beds[dstI]) { return { ok: false, error: "Destination bed is already occupied." }; }
 
       var tenant = srcRoom.beds[srcI];
+      freezePastRent(srcRoom, tenant);
       srcRoom.beds[srcI] = null;
       dstRoom.beds[dstI] = tenant;
 
@@ -654,8 +714,11 @@
       /* The tile shows one month; the ledger remembers all of them. Keep the
          two in step so nothing has to know which is the real record. */
       var month = thisMonth();
+      var rentForMonth = monthRent(target, bed, month);
       bed.paid = !!paid;
       if (bed.paid) { addMonth(bed, month, paymentDate, utr); } else { dropMonth(bed, month); }
+      if (!bed.paymentInfo) { bed.paymentInfo = {}; }
+      bed.paymentInfo[month] = Object.assign({}, bed.paymentInfo[month], { rent: rentForMonth });
 
       if (bed.paid) {
         log("pay", "Rent received from " + bed.name,
@@ -679,6 +742,8 @@
 
       months.forEach(function (m) {
         if (isMonth(m) && bed.paidMonths.indexOf(m) === -1) {
+          if (!bed.paymentInfo) { bed.paymentInfo = {}; }
+          bed.paymentInfo[m] = Object.assign({}, bed.paymentInfo[m], { rent: monthRent(target, bed, m) });
           bed.paidMonths.push(m);
           added++;
         }
@@ -727,6 +792,10 @@
       var wasRent = target.rent;
       var wasNo = target.no;
 
+      if (wasRent !== rent) {
+        target.beds.forEach(function (bed) { freezePastRent(target, bed); });
+      }
+
       target.no = no;
       target.rent = rent;
       if (data.floor != null && data.floor !== "") {
@@ -765,13 +834,51 @@
       var from = bed.joined || today();
       var to = clean(upto, 24) || billedTo(bed);
       if (to < from) { to = from; }
-      var rentAmt = effectiveRent(target, bed);
-
-      return monthsBetween(from, to).map(function (m) {
+      var recordedMonths = Object.keys(bed.paymentInfo || {}).filter(function (m) {
+        var info = bed.paymentInfo[m];
+        return info && (info.edited || info.date || info.utr);
+      });
+      var months = monthsBetween(from, to).concat(bed.paidMonths || [], recordedMonths);
+      months = months.filter(function (m, i) { return isMonth(m) && months.indexOf(m) === i; }).sort();
+      return months.map(function (m) {
         var info = (bed.paymentInfo && bed.paymentInfo[m]) || null;
-        return { month: m, label: monthLabel(m), paid: hasMonth(bed, m), rent: rentAmt,
+        return { month: m, label: monthLabel(m), paid: hasMonth(bed, m), rent: monthRent(target, bed, m),
           paymentDate: info ? info.date : null, utr: info ? info.utr : null };
       });
+    },
+
+    /* Explicit edits also update metadata on already-paid months. */
+    updateMonthPayment: function (roomId, bedIndex, month, data) {
+      var target = room(roomId);
+      var bed = target && target.beds[Number(bedIndex)];
+      if (!bed) { return { ok: false, error: "That tenant is no longer in this bed." }; }
+      if (!isMonth(month)) { return { ok: false, error: "Choose a valid month." }; }
+      data = data || {};
+      var rent = Number(data.rent);
+      if (data.rent == null || data.rent === "" || !isFinite(rent) || rent < 0) {
+        return { ok: false, error: "Enter a rent amount of 0 or more." };
+      }
+      var paymentDate = clean(data.paymentDate, 24);
+      if (paymentDate && !validPaymentDate(paymentDate)) {
+        return { ok: false, error: "Choose a valid payment date." };
+      }
+      if (!bed.paymentInfo) { bed.paymentInfo = {}; }
+      var info = Object.assign({}, bed.paymentInfo[month], { rent: rent, edited: true });
+      if (data.paid) {
+        addMonth(bed, month);
+        info.date = paymentDate;
+        info.utr = clean(data.utr, 40);
+      } else {
+        dropMonth(bed, month);
+        delete info.date;
+        delete info.utr;
+      }
+      bed.paymentInfo[month] = info;
+      bed.paid = hasMonth(bed, thisMonth());
+      log("pay", "Payment record updated for " + bed.name,
+        monthLabel(month) + " · " + (data.paid ? "Paid" : "Unpaid") + " · ₹" + rent.toLocaleString("en-IN"));
+      save();
+      return { ok: true };
     },
 
     /* Settle or unsettle a single month, for fixing one mistake. */
@@ -781,7 +888,10 @@
       if (!bed) { return { ok: false, error: "That bed is empty." }; }
       if (!isMonth(String(month))) { return { ok: false, error: "Pick a month." }; }
 
+      var rentForMonth = monthRent(target, bed, month);
       var changed = paid ? addMonth(bed, month, paymentDate, utr) : dropMonth(bed, month);
+      if (!bed.paymentInfo) { bed.paymentInfo = {}; }
+      bed.paymentInfo[month] = Object.assign({}, bed.paymentInfo[month], { rent: rentForMonth });
       bed.paid = hasMonth(bed, thisMonth());
       if (changed) { save(); }
       return { ok: true, changed: changed };
@@ -805,7 +915,13 @@
       if (!months.length) { return { ok: false, error: "There are no months in that range." }; }
 
       var changed = 0;
-      months.forEach(function (m) { if (addMonth(bed, m, paymentDate, utr)) { changed++; } });
+      months.forEach(function (m) {
+        var rent = monthRent(target, bed, m);
+        if (addMonth(bed, m, paymentDate, utr)) {
+          bed.paymentInfo[m] = Object.assign({}, bed.paymentInfo[m], { rent: rent });
+          changed++;
+        }
+      });
       bed.paid = hasMonth(bed, thisMonth());
 
       var rentAmt = effectiveRent(target, bed);
@@ -840,14 +956,14 @@
           var to = billedTo(bed);
           if (to < from) { to = from; }
 
-          var due = monthsBetween(from, to).filter(function (m) {
-            return !hasMonth(bed, m);
-          });
+          var due = PGStore.ledger(r.id, i).filter(function (m) { return !m.paid; })
+            .map(function (m) { return m.month; });
           if (!due.length) { return; }
 
           var rentAmt = effectiveRent(r, bed);
+          var personDue = due.reduce(function (sum, m) { return sum + monthRent(r, bed, m); }, 0);
           months += due.length;
-          amount += due.length * rentAmt;
+          amount += personDue;
           people.push({
             roomId: r.id,
             roomNo: r.no,
@@ -855,7 +971,7 @@
             bed: bedLabel(i, r.id),
             name: bed.name,
             months: due.length,
-            amount: due.length * rentAmt,
+            amount: personDue,
             rent: rentAmt,
             hasCustomRent: bed.rent != null && bed.rent > 0,
             oldest: due[0]
@@ -876,12 +992,12 @@
       if (!bed) { return null; }
 
       var opts = options || {};
-      var monthlyRent = effectiveRent(target, bed);
       var exitIso = clean(exitDate, 24) || today();
       var exitParts = ym(exitIso) || ym(today());
       var year = exitParts.y;
       var monthIdx = exitParts.m;
       var exitMonth = year + "-" + pad2(monthIdx + 1);
+      var monthlyRent = monthRent(target, bed, exitMonth);
 
       // Days in the exit month (e.g. 28, 29, 30, 31)
       var daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -904,7 +1020,7 @@
       var priorMonths = monthsBetween(from, exitMonth).filter(function (m) {
         return m !== exitMonth && !hasMonth(bed, m);
       });
-      var priorDues = priorMonths.length * monthlyRent;
+      var priorDues = priorMonths.reduce(function (sum, m) { return sum + monthRent(target, bed, m); }, 0);
 
       var deposit = Math.max(0, Number(opts.deposit) || 0);
       var charges = Math.max(0, Number(opts.charges) || 0);
@@ -977,25 +1093,44 @@
 
     /* Expenses are history, so a new month never clears them. */
     addExpense: function (data) {
-      var amount = Math.max(0, Number(data.amount) || 0);
-      var category = clean(data.category, 30) || "Other";
-
-      if (!(amount > 0)) { return { ok: false, error: "Enter an amount above zero." }; }
+      var values = expenseValues(data, true);
+      if (!values.ok) { return values; }
 
       var entry = {
         id: uid(),
-        date: clean(data.date, 24) || today(),
-        category: category,
-        note: clean(data.note, 80),
-        amount: amount
+        date: values.date,
+        category: values.category,
+        note: values.note,
+        amount: values.amount
       };
 
       state.expenses.push(entry);
       sortExpenses(state.expenses);
 
-      log("out", category + " expense of \u20b9" + amount.toLocaleString("en-IN"), entry.note || "");
+      log("out", entry.category + " expense of \u20b9" + entry.amount.toLocaleString("en-IN"), entry.note || "");
       save();
-      return { ok: true };
+      return { ok: true, id: entry.id };
+    },
+
+    /* Keep the original id so edits update the same synced record. */
+    updateExpense: function (id, data) {
+      var entry = null;
+      for (var i = 0; i < state.expenses.length; i++) {
+        if (state.expenses[i].id === id) { entry = state.expenses[i]; break; }
+      }
+      if (!entry) { return { ok: false, error: "That expense is gone already." }; }
+      var values = expenseValues(data, false);
+      if (!values.ok) { return values; }
+
+      entry.date = values.date;
+      entry.category = values.category;
+      entry.note = values.note;
+      entry.amount = values.amount;
+      sortExpenses(state.expenses);
+      log("out", "Expense updated", entry.category + " \u00b7 \u20b9" +
+        entry.amount.toLocaleString("en-IN") + " \u00b7 " + entry.date);
+      save();
+      return { ok: true, id: entry.id };
     },
 
     removeExpense: function (id) {
@@ -1066,6 +1201,10 @@
     addComplaint: function (data) {
       var title = clean(data.title, 80);
       if (!title) { return { ok: false, error: "Enter a title for the issue." }; }
+      var reportedDate = clean(data.date, 24) || today();
+      var resolvedDate = clean(data.resolvedAt, 24);
+      if (!isComplaintDate(reportedDate)) { return { ok: false, error: "Enter a valid date reported." }; }
+      if (resolvedDate && !isComplaintDate(resolvedDate)) { return { ok: false, error: "Enter a valid resolution date." }; }
 
       var entry = {
         id: uid(),
@@ -1077,8 +1216,9 @@
         status: (data.status === "in_progress" || data.status === "resolved") ? data.status : "open",
         cost: Math.max(0, Number(data.cost) || 0),
         note: clean(data.note, 200),
-        date: clean(data.date, 24) || today(),
-        resolvedAt: data.status === "resolved" ? (clean(data.resolvedAt, 24) || today()) : ""
+        date: reportedDate,
+        resolvedAt: data.status === "resolved" ? (resolvedDate || today()) : "",
+        expenseId: ""
       };
 
       if (!state.complaints) { state.complaints = []; }
@@ -1096,33 +1236,62 @@
         if (state.complaints[i].id === id) { found = state.complaints[i]; break; }
       }
       if (!found) { return { ok: false, error: "Issue not found." }; }
+      if (!data || typeof data !== "object") { return { ok: false, error: "Nothing to change." }; }
 
-      if (data.title) { found.title = clean(data.title, 80); }
-      if (data.category) { found.category = clean(data.category, 30); }
-      if (data.priority) { found.priority = data.priority; }
+      var title = data.title !== undefined ? clean(data.title, 80) : found.title;
+      var reportedDate = data.date !== undefined ? clean(data.date, 24) : found.date;
+      var status = data.status !== undefined ? data.status : found.status;
+      var priority = data.priority !== undefined ? data.priority : found.priority;
+      var cost = data.cost !== undefined ? Number(data.cost) : found.cost;
+      var resolvedDate = data.resolvedAt !== undefined ? clean(data.resolvedAt, 24) : found.resolvedAt;
+      if (!title) { return { ok: false, error: "Enter a title for the issue." }; }
+      if (!isComplaintDate(reportedDate)) { return { ok: false, error: "Enter a valid date reported." }; }
+      if (resolvedDate && !isComplaintDate(resolvedDate)) { return { ok: false, error: "Enter a valid resolution date." }; }
+      if (["open", "in_progress", "resolved"].indexOf(status) === -1) { return { ok: false, error: "Pick an issue status." }; }
+      if (["high", "medium", "low"].indexOf(priority) === -1) { return { ok: false, error: "Pick an issue priority." }; }
+      if (!isFinite(cost) || cost < 0) { return { ok: false, error: "Enter a repair cost of zero or more." }; }
+
+      var oldNote = clean("Repair: " + found.title + (found.roomNo ? " (Room " + found.roomNo + ")" : ""), 80);
+      var oldCost = found.cost;
+      var changedDate = reportedDate !== found.date || (resolvedDate || "") !== (found.resolvedAt || "");
+      found.title = title;
+      found.date = reportedDate;
+      found.category = data.category !== undefined ? (clean(data.category, 30) || "General") : found.category;
+      found.priority = priority;
       if (data.note !== undefined) { found.note = clean(data.note, 200); }
       if (data.roomId !== undefined) { found.roomId = clean(data.roomId, 40); }
       if (data.roomNo !== undefined) { found.roomNo = clean(data.roomNo, 12); }
+      found.status = status;
+      found.resolvedAt = status === "resolved" ? (resolvedDate || today()) : "";
+      found.cost = cost;
 
-      if (data.status) {
-        found.status = data.status;
-        if (found.status === "resolved" && !found.resolvedAt) {
-          found.resolvedAt = today();
+      if (data.syncExpense && found.status === "resolved") {
+        var linked = state.expenses.find(function (x) { return x.id === found.expenseId; });
+        /* Older repairs had no link. Adopt an unambiguous existing repair
+           before creating a new expense, then retain its stable ID. */
+        if (!linked && !found.expenseId) {
+          var legacyMatches = state.expenses.filter(function (x) {
+            return x.category === "Maintenance" && x.note === oldNote && x.amount === oldCost &&
+              !state.complaints.some(function (c) { return c.id !== found.id && c.expenseId === x.id; });
+          });
+          if (legacyMatches.length === 1) { linked = legacyMatches[0]; }
         }
-      }
-
-      if (data.cost !== undefined) {
-        found.cost = Math.max(0, Number(data.cost) || 0);
-      }
-
-      if (data.syncExpense && found.status === "resolved" && found.cost > 0) {
-        state.expenses.push({
-          id: uid(),
-          date: today(),
-          category: "Maintenance",
-          note: "Repair: " + found.title + (found.roomNo ? " (Room " + found.roomNo + ")" : ""),
-          amount: found.cost
-        });
+        if (found.cost > 0) {
+          var creatingExpense = !linked;
+          if (creatingExpense) {
+            linked = { id: uid(), date: found.resolvedAt || found.date, category: "Maintenance" };
+            state.expenses.push(linked);
+          } else if (changedDate) {
+            linked.date = found.resolvedAt || found.date;
+          }
+          var newNote = clean("Repair: " + found.title + (found.roomNo ? " (Room " + found.roomNo + ")" : ""), 80);
+          if (creatingExpense || found.cost !== oldCost) { linked.amount = found.cost; }
+          if (creatingExpense || newNote !== oldNote) { linked.note = newNote; }
+          found.expenseId = linked.id;
+        } else if (linked) {
+          state.expenses = state.expenses.filter(function (x) { return x.id !== linked.id; });
+          found.expenseId = "";
+        }
         sortExpenses(state.expenses);
       }
 
@@ -1147,10 +1316,10 @@
 
     addRate: function (data) {
       var label = clean(data.label, 40);
-      var amount = Math.max(0, Number(data.amount) || 0);
+      var amount = Number(data.amount);
 
       if (!label) { return { ok: false, error: "Name the rate, like \u201c2 sharing\u201d." }; }
-      if (!(amount > 0)) { return { ok: false, error: "Enter an amount above zero." }; }
+      if (!isFinite(amount) || !(amount > 0)) { return { ok: false, error: "Enter an amount above zero." }; }
       if (state.rates.length >= 30) { return { ok: false, error: "That is as many rates as one card holds." }; }
 
       state.rates.push({
@@ -1162,6 +1331,23 @@
       sortRates(state.rates);
 
       log("in", "Rate added: " + label, "\u20b9" + amount.toLocaleString("en-IN") + " per bed");
+      save();
+      return { ok: true };
+    },
+
+    updateRate: function (id, data) {
+      var found = state.rates.find(function (r) { return r.id === id; });
+      if (!found) { return { ok: false, error: "That rate is gone already." }; }
+      if (!data || typeof data !== "object") { return { ok: false, error: "Nothing to change." }; }
+      var label = clean(data.label, 40);
+      var amount = Number(data.amount);
+      if (!label) { return { ok: false, error: "Name the rate, like \u201c2 sharing\u201d." }; }
+      if (!isFinite(amount) || !(amount > 0)) { return { ok: false, error: "Enter an amount above zero." }; }
+      found.label = label;
+      found.amount = amount;
+      found.note = clean(data.note, 60);
+      sortRates(state.rates);
+      log("in", "Rate updated: " + label, "\u20b9" + amount.toLocaleString("en-IN") + " per bed");
       save();
       return { ok: true };
     },

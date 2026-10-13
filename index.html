@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="styles.css?v=26" />
 <link rel="stylesheet" href="manage.css?v=22" />
 <link rel="stylesheet" href="analytics.css?v=22" />
-<link rel="stylesheet" href="dashboard-refresh.css?v=25" />
+<link rel="stylesheet" href="dashboard-refresh.css?v=27" />
 <style>
 html.auth-pending body{visibility:hidden}
 /* Loading skeleton — shown while JS boots */
@@ -45,9 +45,9 @@ html.auth-pending body{visibility:hidden}
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="config.js?v=22"></script>
-<script src="supabase-storage.js?v=22"></script>
+<script src="supabase-storage.js?v=27"></script>
 <script src="auth.js?v=22"></script>
-<script src="store.js?v=22"></script>
+<script src="store.js?v=27"></script>
 <script src="sheets.js?v=22"></script>
 <script>
   // Unregister any old service workers that may be serving stale cache.
@@ -357,12 +357,16 @@ html.auth-pending body{visibility:hidden}
     <div class="page-head">
       <div>
         <h1 id="rent-title">Rent</h1>
-        <p class="sub">Collection status and full payment history for the current cycle.</p>
+        <p class="sub">Choose any month to review and correct rent and payment records.</p>
       </div>
       <div class="head-actions">
         <button class="btn-ghost btn-sm" data-act="export-ledger" type="button">Export Ledger CSV</button>
         <button class="btn-ghost btn-sm" data-act="export-tenants" type="button">Export Tenants CSV</button>
       </div>
+    </div>
+    <div class="rent-period-controls">
+      <label class="field"><span>Month to review</span><input id="rent-month" type="month" aria-label="Rent month" /></label>
+      <button class="btn-ghost btn-sm" type="button" data-act="rent-current">This month</button>
     </div>
     <div class="stats stats-3" id="rent-stats"></div>
     <div class="card">
@@ -671,20 +675,20 @@ html.auth-pending body{visibility:hidden}
   </form>
 </dialog>
 
-<!-- ADD EXPENSE -->
-<dialog class="dlg" id="dlg-expense">
+<!-- ADD / EDIT EXPENSE -->
+<dialog class="dlg" id="dlg-expense" aria-labelledby="x-title">
   <form class="dlg-card" id="form-expense">
-    <h3>Add an expense</h3>
+    <h3 id="x-title">Add an expense</h3>
     <div class="form-grid">
       <label class="field"><span>Category</span><select id="x-cat" required></select></label>
-      <label class="field"><span>Amount (₹)</span><input id="x-amt" type="number" min="1" step="1" placeholder="2500" required /></label>
+      <label class="field"><span>Amount (₹)</span><input id="x-amt" type="number" min="0.01" step="0.01" placeholder="2500" required /></label>
       <label class="field"><span>Date</span><input id="x-date" type="date" required /></label>
       <label class="field"><span>Note (optional)</span><input id="x-note" maxlength="80" placeholder="July bill" /></label>
     </div>
-    <p class="auth-error" id="x-err" hidden></p>
+    <p class="auth-error" id="x-err" role="alert" hidden></p>
     <div class="dlg-foot">
       <button class="btn-ghost" type="button" data-act="close" data-dlg="dlg-expense">Cancel</button>
-      <button class="btn-primary btn-sm" type="submit">Add expense</button>
+      <button class="btn-primary btn-sm" id="x-submit" type="submit">Add expense</button>
     </div>
   </form>
 </dialog>
@@ -782,7 +786,7 @@ html.auth-pending body{visibility:hidden}
 <!-- ADD A RATE -->
 <dialog class="dlg" id="dlg-rate">
   <form class="dlg-card" id="form-rate">
-    <h3>Add a rate</h3>
+    <h3 id="ra-title">Add a rate</h3>
     <div class="form-grid">
       <label class="field span-2"><span>What it covers</span><input id="ra-label" maxlength="40" placeholder="2 sharing, AC" required /></label>
       <label class="field"><span>Rent per bed (₹)</span><input id="ra-amt" type="number" min="0" step="100" placeholder="8500" required /></label>
@@ -791,7 +795,7 @@ html.auth-pending body{visibility:hidden}
     <p class="auth-error" id="ra-err" hidden></p>
     <div class="dlg-foot">
       <button class="btn-ghost" type="button" data-act="close" data-dlg="dlg-rate">Cancel</button>
-      <button class="btn-primary btn-sm" type="submit">Add rate</button>
+      <button class="btn-primary btn-sm" id="ra-save" type="submit">Add rate</button>
     </div>
   </form>
 </dialog>
@@ -967,25 +971,46 @@ html.auth-pending body{visibility:hidden}
 <!-- RESOLVE ISSUE -->
 <dialog class="dlg" id="dlg-resolve-complaint">
   <form class="dlg-card" id="form-resolve-complaint">
-    <h3>Update Issue Status</h3>
+    <h3>Edit maintenance issue</h3>
     <p class="dlg-sub" id="rco-title"></p>
     <div class="form-grid">
-      <label class="field span-2"><span>Status</span>
+      <label class="field span-2"><span>Issue title</span><input id="rco-name" maxlength="80" required /></label>
+      <label class="field"><span>Room <i class="field-opt">optional</i></span><select id="rco-room"></select></label>
+      <label class="field"><span>Category</span>
+        <select id="rco-cat">
+          <option value="Plumbing">Plumbing</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Carpentry">Carpentry</option>
+          <option value="Appliance">Appliance / AC</option>
+          <option value="Cleaning">Cleaning</option>
+          <option value="Wifi / Internet">Wifi / Internet</option>
+          <option value="General">General</option>
+        </select></label>
+      <label class="field"><span>Priority</span>
+        <select id="rco-priority">
+          <option value="high">High (Urgent)</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select></label>
+      <label class="field"><span>Date reported</span><input id="rco-date" type="date" required /></label>
+      <label class="field"><span>Status</span>
         <select id="rco-status">
           <option value="open">Open</option>
           <option value="in_progress">In Progress</option>
           <option value="resolved">Resolved</option>
         </select></label>
-      <label class="field span-2"><span>Repair cost (₹) <i class="field-opt">optional</i></span><input id="rco-cost" type="number" min="0" step="10" placeholder="0" /></label>
+      <label class="field"><span>Date resolved <i class="field-opt">optional</i></span><input id="rco-resolved" type="date" /></label>
+      <label class="field"><span>Repair cost (₹) <i class="field-opt">optional</i></span><input id="rco-cost" type="number" min="0" step="0.01" placeholder="0" /></label>
+      <label class="field span-2"><span>Details / notes</span><textarea id="rco-note" maxlength="200" rows="2"></textarea></label>
       <label class="field span-2" style="display:flex;flex-direction:row;align-items:center;gap:8px">
         <input type="checkbox" id="rco-sync-exp" checked style="width:auto;min-height:auto" />
-        <span style="margin:0;font-size:13px">Automatically add repair cost to Expenses under Maintenance</span>
+        <span style="margin:0;font-size:13px">Save repair cost to Expenses under Maintenance</span>
       </label>
     </div>
     <p class="auth-error" id="rco-err" hidden></p>
     <div class="dlg-foot">
       <button class="btn-ghost" type="button" data-act="close" data-dlg="dlg-resolve-complaint">Cancel</button>
-      <button class="btn-primary btn-sm" type="submit">Save status</button>
+      <button class="btn-primary btn-sm" type="submit">Save changes</button>
     </div>
   </form>
 </dialog>
@@ -1071,11 +1096,11 @@ html.auth-pending body{visibility:hidden}
   </div>
 </dialog>
 
-<script src="analytics.js?v=22"></script>
-<script src="app.js?v=23"></script>
+<script src="analytics.js?v=27"></script>
+<script src="app.js?v=27"></script>
 <script src="import.js?v=22"></script>
 <script src="profile.js?v=22"></script>
 <script src="account.js?v=22"></script>
-<script src="rent.js?v=22"></script>
+<script src="rent.js?v=27"></script>
 </body>
 </html>

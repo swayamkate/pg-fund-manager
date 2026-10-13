@@ -14,6 +14,7 @@
   var doc = global.document;
   var editing = null;   /* room id being edited */
   var viewing = null;   /* {roomId, bedIndex} whose history is open */
+  var paymentEditing = null; /* {roomId, bedIndex} while a month is being edited */
 
   function el(id) { return doc.getElementById(id); }
   function store() { return global.PGStore; }
@@ -85,15 +86,44 @@
             '<label class="field"><span>UTR / Transaction ID <i class="field-opt">optional</i></span>' +
               '<input id="lg-utr" maxlength="40" placeholder="e.g. 123456789012" /></label>' +
           '</div>' +
+          '<p class="dlg-sub">Choose any month below to edit its rent amount, payment status, date, or reference.</p>' +
           '<div class="lg-grid" id="lg-months"></div>' +
           '<p class="lg-total" id="lg-total"></p>' +
           '<div class="dlg-foot">' +
             '<button class="btn-primary btn-sm" type="button" data-act="rent-close">Done</button>' +
           '</div>' +
         '</form>' +
+      '</dialog>' +
+
+      '<dialog class="dlg" id="dlg-payment">' +
+        '<form class="dlg-card" id="form-month-payment">' +
+          '<h3>Edit payment</h3>' +
+          '<p class="dlg-sub" id="pm-who"></p>' +
+          '<p class="dlg-sub">Choose a month to edit its record. Saving changes only that month.</p>' +
+          '<div class="form-grid">' +
+            '<label class="field"><span>Rent month</span>' +
+              '<input id="pm-month" type="month" required /></label>' +
+            '<label class="field"><span>Monthly rent (₹)</span>' +
+              '<input id="pm-rent" type="number" min="0" step="0.01" inputmode="decimal" required /></label>' +
+            '<label class="field"><span>Payment status</span>' +
+              '<select id="pm-paid"><option value="0">Unpaid</option><option value="1">Paid</option></select></label>' +
+            '<label class="field"><span>Payment date <i class="field-opt">optional</i></span>' +
+              '<input id="pm-date" type="date" /></label>' +
+            '<label class="field span-2"><span>UTR / Transaction ID <i class="field-opt">optional</i></span>' +
+              '<input id="pm-utr" maxlength="40" placeholder="e.g. 123456789012" /></label>' +
+          '</div>' +
+          '<p class="auth-error" id="pm-err" hidden></p>' +
+          '<div class="dlg-foot">' +
+            '<button class="btn-ghost" type="button" data-act="payment-close">Cancel</button>' +
+            '<button class="btn-primary btn-sm" type="submit">Save payment</button>' +
+          '</div>' +
+        '</form>' +
       '</dialog>';
 
     while (holder.firstChild) { doc.body.appendChild(holder.firstChild); }
+    el("pm-month").addEventListener("change", loadPaymentMonth);
+    el("form-month-payment").addEventListener("submit", savePayment);
+    el("dlg-payment").addEventListener("close", function () { paymentEditing = null; });
     return true;
   }
 
@@ -130,8 +160,8 @@
         room.beds.forEach(function (bed, i) {
           if (!bed) { return; }
           var months = store().ledger(room.id, i);
-          var rentAmt = store().effectiveRent ? store().effectiveRent(room, bed) : (bed.rent || room.rent || 0);
           months.forEach(function (m) {
+            var rentAmt = m.rent;
             var info = (bed.paymentInfo && bed.paymentInfo[m.month]) || null;
             var dateStr = info ? info.date : '';
             var utrStr = info ? info.utr : '';
@@ -273,7 +303,7 @@
       chips +=
         '<button class="lg-chip' + (m.paid ? ' is-paid' : '') + '" type="button" ' +
           'data-act="lg-month" data-m="' + esc(m.month) + '" ' +
-          'data-paid="' + (m.paid ? '1' : '0') + '"' + tip + '>' + esc(m.label) + '</button>';
+          'aria-label="Edit ' + esc(m.label) + ' payment, ' + (m.paid ? 'paid' : 'unpaid') + '"' + tip + '>' + esc(m.label) + '</button>';
     });
 
     el("lg-months").innerHTML = chips ||
@@ -322,6 +352,61 @@
     el("dlg-rent").showModal();
   }
 
+  function loadPaymentMonth() {
+    if (!paymentEditing) { return; }
+    var month = el("pm-month").value;
+    var rows = store().ledger(paymentEditing.roomId, paymentEditing.bedIndex);
+    var selected = null;
+    rows.forEach(function (row) { if (row.month === month) { selected = row; } });
+    if (!selected) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+        show("pm-err", "Choose a valid month.");
+        return;
+      }
+      var room = null;
+      store().state().rooms.forEach(function (r) { if (r.id === paymentEditing.roomId) { room = r; } });
+      var bed = room && room.beds[paymentEditing.bedIndex];
+      if (!bed) { show("pm-err", "That tenant is no longer in this bed."); return; }
+      selected = { rent: store().monthRent(room, bed, month), paid: false, paymentDate: "", utr: "" };
+    }
+    el("pm-rent").value = selected.rent;
+    el("pm-paid").value = selected.paid ? "1" : "0";
+    el("pm-date").value = selected.paymentDate || "";
+    el("pm-utr").value = selected.utr || "";
+    hide("pm-err");
+  }
+
+  function editPayment(roomId, bedIndex, month) {
+    if (!ensureDom() || !store()) { return; }
+    var room = null;
+    store().state().rooms.forEach(function (r) { if (r.id === roomId) { room = r; } });
+    var bed = room && room.beds[Number(bedIndex)];
+    if (!bed) { return; }
+    var rows = store().ledger(roomId, Number(bedIndex));
+    paymentEditing = { roomId: roomId, bedIndex: Number(bedIndex) };
+    el("pm-who").textContent = bed.name + " · Room " + room.no + " · Bed " + store().bedLabel(bedIndex, roomId);
+    el("pm-month").value = month || (rows.length ? rows[rows.length - 1].month : store().monthKey());
+    loadPaymentMonth();
+    if (!el("dlg-payment").open) { el("dlg-payment").showModal(); }
+  }
+
+  function savePayment(e) {
+    e.preventDefault();
+    if (!paymentEditing) { return; }
+    var result = store().updateMonthPayment(paymentEditing.roomId, paymentEditing.bedIndex, el("pm-month").value, {
+      rent: el("pm-rent").value,
+      paid: el("pm-paid").value === "1",
+      paymentDate: el("pm-date").value,
+      utr: el("pm-utr").value
+    });
+    if (!result.ok) { show("pm-err", result.error || "Could not save that payment."); return; }
+    el("dlg-payment").close();
+    paymentEditing = null;
+    if (viewing) { paintLedger(); }
+    commit();
+    if (typeof global.toast === "function") { global.toast("Payment updated", "success"); }
+  }
+
   function hide(id) {
     var node = el(id);
     if (node) { node.hidden = true; node.innerHTML = ""; }
@@ -333,12 +418,13 @@
   }
 
   function closeAll() {
-    ["dlg-rent", "dlg-ledger"].forEach(function (id) {
+    ["dlg-rent", "dlg-ledger", "dlg-payment"].forEach(function (id) {
       var d = el(id);
       if (d && d.open) { d.close(); }
     });
     editing = null;
     viewing = null;
+    paymentEditing = null;
   }
 
   /* Everything app.js changes should be reflected here too, so any click we
@@ -363,6 +449,17 @@
       return;
     }
 
+    if (act === "rent-edit-payment") {
+      editPayment(btn.getAttribute("data-room"), Number(btn.getAttribute("data-bed")), btn.getAttribute("data-month"));
+      return;
+    }
+
+    if (act === "payment-close") {
+      el("dlg-payment").close();
+      paymentEditing = null;
+      return;
+    }
+
     if (act === "rent-close") {
       closeAll();
       render();
@@ -384,15 +481,7 @@
 
     if (act === "lg-month") {
       if (!viewing) { return; }
-      var wasPaid = btn.getAttribute("data-paid") === "1";
-      var payDate = el("lg-paydate").value || today();
-      var utr = (el("lg-utr").value || "").trim();
-      var out = store().setMonthPaid(viewing.roomId, viewing.bedIndex,
-        btn.getAttribute("data-m"), !wasPaid, !wasPaid ? payDate : null, !wasPaid ? utr : null);
-      if (!out.ok) { show("lg-err", out.error || "Could not change that month."); return; }
-      hide("lg-err");
-      paintLedger();
-      commit();
+      editPayment(viewing.roomId, viewing.bedIndex, btn.getAttribute("data-m"));
       return;
     }
 
@@ -429,5 +518,5 @@
     start(0);
   }
 
-  global.PGRent = { render: render };
+  global.PGRent = { render: render, editPayment: editPayment };
 })(window);

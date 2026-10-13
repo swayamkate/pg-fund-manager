@@ -169,3 +169,13 @@ Dark is the default. The toggle in the top-right saves the choice to
 - Edit a tenant, or move one between beds, without checking out first
 - Rent receipts and payment history per month
 - Complaints and expense tracking
+
+## Editing saved records
+
+On **Rent**, use **Month to review** to choose a month, then **Edit** beside a tenant. Payment history rows and month chips open the same editor. Choose any month and correct its rent amount, paid/unpaid status, payment date, and transaction reference. Each month retains its own amount; changing current room or tenant rent preserves previous amounts and settled months. Receipts and ledger CSV exports include the edited month and payment details.
+
+Expenses and complaints have an **Edit** action with their original dates and values. The rate card also supports editing existing entries. Tenant profiles, rooms, and owner details remain editable through their existing controls. These controls edit retained records; they cannot recover tenant history that was already deleted at checkout.
+
+Migration `supabase/migrations/014_complaint_edit_metadata.sql` adds nullable resolution-date and linked-expense fields without removing data. This keeps complaint edits and their repair expenses consistent across devices.
+
+Regression checks: `node test-historical-payments.js`, `node test-expense-edits.js`, and `node test-complaint-rate-edits.js`.

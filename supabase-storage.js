@@ -374,7 +374,7 @@
         return { id: r.id, label: r.label, amount: r.amount, note: r.note };
       }),
       complaints: (complaints || []).map(function (c) {
-        return { id: c.id, title: c.title, roomId: c.room_id, roomNo: c.room_no, category: c.category, priority: c.priority, status: c.status, date: c.date, note: c.note, cost: c.cost };
+        return { id: c.id, title: c.title, roomId: c.room_id, roomNo: c.room_no, category: c.category, priority: c.priority, status: c.status, date: c.date, note: c.note, cost: c.cost, resolvedAt: c.resolved_at || "", expenseId: c.expense_id || "" };
       }),
       owner: {
         name: (prop.owner_name || ""),
@@ -497,7 +497,7 @@
 
     /* --- Complaints --- */
     var complaintRows = (state.complaints || []).map(function (c) {
-      return { id: c.id, title: c.title, room_id: c.roomId || "", room_no: c.roomNo || "", category: c.category, priority: c.priority, status: c.status, date: c.date, note: c.note || "", cost: c.cost || 0 };
+      return { id: c.id, title: c.title, room_id: c.roomId || "", room_no: c.roomNo || "", category: c.category, priority: c.priority, status: c.status, date: c.date, note: c.note || "", cost: c.cost || 0, resolved_at: c.resolvedAt || null, expense_id: c.expenseId || null };
     });
 
     /* --- Activity (last 50) --- */
@@ -681,7 +681,7 @@
     beds: ["id", "room_id", "bed_index", "name", "phone", "joined", "leaving", "note", "collect", "rent", "deposit", "id_type", "id_number", "emergency_contact", "workplace", "on_notice", "paid_months", "payment_info"],
     expenses: ["id", "date", "category", "amount", "note"],
     rates: ["id", "label", "amount", "note"],
-    complaints: ["id", "title", "room_id", "room_no", "category", "priority", "status", "date", "note", "cost"],
+    complaints: ["id", "title", "room_id", "room_no", "category", "priority", "status", "date", "note", "cost", "resolved_at", "expense_id"],
     activity: ["id", "text", "type", "ts"],
     properties: ["id", "owner_id", "owner_name", "name", "address", "phone", "upi_id", "pg_start_date"],
     settings: ["owner_id", "floors", "bed_style", "bed_numbering"],

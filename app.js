@@ -97,12 +97,17 @@ function bedStatus(bed) {
   return new Date().getDate() > 10 ? "late" : "due";
 }
 
-function tenants() {
+let selectedRentMonth = monthKey();
+
+function tenants(month) {
   const out = [];
   PGStore.state().rooms.forEach((room) => {
     room.beds.forEach((bed, i) => {
       if (!bed) { return; }
-      const effRent = PGStore.effectiveRent ? PGStore.effectiveRent(room, bed) : (bed.rent || room.rent);
+      if (month && !PGStore.ledger(room.id, i).some((entry) => entry.month === month)) { return; }
+      const period = month || monthKey();
+      const effRent = PGStore.monthRent(room, bed, period);
+      const paid = (bed.paidMonths || []).includes(period);
       out.push({
         name: bed.name,
         phone: bed.phone,
@@ -115,8 +120,8 @@ function tenants() {
         emergencyContact: bed.emergencyContact || "",
         workplace: bed.workplace || "",
         onNotice: bed.onNotice,
-        paid: bed.paid,
-        status: bedStatus(bed),
+        paid: paid,
+        status: paid ? "paid" : (period < monthKey() || (period === monthKey() && new Date().getDate() > 10) ? "late" : "due"),
         roomId: room.id,
         roomNo: room.no,
         bedIndex: i,
@@ -330,11 +335,10 @@ function renderGraph() {
     let collected = 0;
     let expected = 0;
     rooms.forEach((room) => {
-      room.beds.forEach((bed) => {
-        if (!bed || !bed.joined) return;
-        const rent = PGStore.effectiveRent(room, bed);
-        const joinedKey = bed.joined.slice(0, 7);
-        if (joinedKey <= key) {
+      room.beds.forEach((bed, bedIndex) => {
+        if (!bed) return;
+        const rent = PGStore.monthRent(room, bed, key);
+        if (PGStore.ledger(room.id, bedIndex).some((entry) => entry.month === key)) {
           expected += rent;
           if (isArray(bed.paidMonths) && bed.paidMonths.indexOf(key) !== -1) {
             collected += rent;
@@ -609,12 +613,16 @@ function renderTenants() {
 }
 
 function renderRent() {
-  const list = tenants();
-  const t = totals();
+  const month = selectedRentMonth;
+  const list = tenants(month);
+  const expected = list.reduce((sum, tenant) => sum + tenant.rent, 0);
+  const collected = list.filter((tenant) => tenant.paid).reduce((sum, tenant) => sum + tenant.rent, 0);
+  const t = { expected: expected, collected: collected, pending: expected - collected };
   const paid = list.filter((x) => x.paid).length;
 
   el("rent-title").textContent =
-    "Rent \u2014 " + new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+    "Rent \u2014 " + PGStore.monthLabel(month);
+  el("rent-month").value = month;
 
   el("rent-stats").innerHTML = [
     { label: "Expected", value: money(t.expected), note: list.length === 1 ? "1 tenant" : list.length + " tenants", icon: "rupee", tone: "brand" },
@@ -623,7 +631,7 @@ function renderRent() {
   ].map(statCard).join("");
 
   if (!list.length) {
-    el("paylist").innerHTML = '<li class="feed-blank">Rent appears here once tenants move in.</li>';
+    el("paylist").innerHTML = '<li class="feed-blank">No rent records for this month. Open a tenant\'s payment history to add or correct a record.</li>';
     return;
   }
 
@@ -640,10 +648,18 @@ function renderRent() {
         <span class="pay-right">
           <span class="amount">${money(x.rent)}</span>
           <span class="badge badge-${x.status}">${BADGE[x.status]}</span>
-          <button class="link-btn" type="button" data-act="pay" data-room="${esc(x.roomId)}" data-bed="${x.bedIndex}" data-paid="${x.paid ? "0" : "1"}">${x.paid ? "Undo" : "Mark paid"}</button>
+          <button class="link-btn" type="button" data-act="rent-edit-payment" data-room="${esc(x.roomId)}" data-bed="${x.bedIndex}" data-month="${month}">Edit</button>
+          <button class="link-btn" type="button" data-act="receipt" data-room="${esc(x.roomId)}" data-bed="${x.bedIndex}" data-month="${month}">Receipt</button>
         </span>
       </li>`).join("");
 }
+
+el("rent-month").addEventListener("change", function () {
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(this.value)) {
+    selectedRentMonth = this.value;
+    renderRent();
+  }
+});
 
 function renderExpenses() {
   const x = expenseSummary();
@@ -690,6 +706,7 @@ function renderExpenses() {
         </span>
         <span class="pay-right">
           <span class="amount">${money(e.amount)}</span>
+          <button class="link-btn" type="button" data-act="edit-expense" data-exp="${esc(e.id)}" aria-label="${esc("Edit " + e.category + " expense dated " + e.date)}">Edit</button>
           <button class="link-btn link-danger" type="button" data-act="del-expense" data-exp="${esc(e.id)}">Remove</button>
         </span>
       </li>`;
@@ -757,7 +774,7 @@ function renderComplaints() {
       + (c.status === "resolved" && c.resolvedAt ? '<p style="font-size:11px;color:var(--green);margin:4px 0 0">\u2713 Resolved ' + prettyDate(c.resolvedAt) + '</p>' : "")
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-shrink:0">'
-      + '<button class="link-btn" type="button" data-act="resolve-complaint" data-comp="' + esc(c.id) + '">Update</button>'
+      + '<button class="link-btn" type="button" data-act="resolve-complaint" data-comp="' + esc(c.id) + '">Edit</button>'
       + '<button class="link-btn link-danger" type="button" data-act="del-complaint" data-comp="' + esc(c.id) + '">\u00d7</button>'
       + '</div>'
       + '</div>'
@@ -896,10 +913,25 @@ function renderRates() {
         <div><b>${esc(r.label)}</b><span>${esc(r.note || "per bed, per month")}</span></div>
         <span class="pay-right">
           <span class="rc-amt">${money(r.amount)}</span>
+          <button class="link-btn" type="button" data-act="edit-rate" data-rate="${esc(r.id)}">Edit</button>
           <button class="link-btn link-danger" type="button" data-act="del-rate" data-rate="${esc(r.id)}">Remove</button>
         </span>
       </div>`).join("")
     : '<p class="rate-blank">Nothing on the card yet. Add what you charge for a single, a two sharing, an AC room \u2014 then you can pull it up in front of anyone who asks.</p>';
+}
+
+function openRateDialog(rateId) {
+  const rate = rateId ? PGStore.state().rates.find((r) => r.id === rateId) : null;
+  if (rateId && !rate) { toast("That rate is gone already.", "error"); return; }
+  closeDlg("dlg-rates");
+  el("form-rate").dataset.rateId = rate ? rate.id : "";
+  el("ra-title").textContent = rate ? "Edit rate" : "Add a rate";
+  el("ra-save").textContent = rate ? "Save changes" : "Add rate";
+  el("ra-label").value = rate ? rate.label : "";
+  el("ra-amt").value = rate ? rate.amount : "";
+  el("ra-note").value = rate ? rate.note || "" : "";
+  el("ra-err").hidden = true;
+  openDlg("dlg-rate");
 }
 
 /* ---- Bulk set rents ---- */
@@ -1696,10 +1728,22 @@ function openTenantDialog(roomId, bedIndex) {
   openDlg("dlg-tenant");
 }
 
-function openExpenseDialog() {
+function openExpenseDialog(expenseId) {
+  const expense = expenseId ? (PGStore.state().expenses || []).find((x) => x.id === expenseId) : null;
+  if (expenseId && !expense) { toast("That expense is gone already.", "warn"); return; }
+  const form = el("form-expense");
+  form.reset();
+  form.dataset.expenseId = expense ? expense.id : "";
+  const categories = EXPENSE_CATS.slice();
+  if (expense && !categories.includes(expense.category)) { categories.push(expense.category); }
   const sel = el("x-cat");
-  sel.innerHTML = EXPENSE_CATS.map((c) => `<option value="${c}">${c}</option>`).join("");
-  el("x-date").value = new Date().toISOString().slice(0, 10);
+  sel.innerHTML = categories.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  if (expense) { sel.value = expense.category; }
+  el("x-amt").value = expense ? expense.amount : "";
+  el("x-date").value = expense ? expense.date : new Date().toISOString().slice(0, 10);
+  el("x-note").value = expense ? expense.note || "" : "";
+  el("x-title").textContent = expense ? "Edit expense" : "Add an expense";
+  el("x-submit").textContent = expense ? "Save changes" : "Add expense";
   openDlg("dlg-expense");
 }
 
@@ -1811,20 +1855,22 @@ el("form-offboard").addEventListener("submit", (e) => {
 
 let receiptRef = null;
 
-function openReceiptDialog(roomId, bedIndex) {
+function openReceiptDialog(roomId, bedIndex, period) {
   const rooms = PGStore.state().rooms;
   const room = rooms.find((r) => r.id === roomId);
   if (!room) { return; }
   const bed = room.beds[bedIndex];
   if (!bed) { return; }
 
-  receiptRef = { roomId, bedIndex };
+  period = /^\d{4}-(0[1-9]|1[0-2])$/.test(period || "") ? period : monthKey();
+  receiptRef = { roomId, bedIndex, period };
   const owner = PGStore.state().owner || {};
-  const rent = PGStore.effectiveRent(room, bed);
+  const rent = PGStore.monthRent(room, bed, period);
+  const paymentInfo = (bed.paymentInfo && bed.paymentInfo[period]) || {};
   const now = new Date();
-  const monthLabel = now.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
-  const receiptNo = "RCP-" + now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
-  const isPaid = bed.paid;
+  const monthLabel = PGStore.monthLabel(period);
+  const receiptNo = "RCP-" + period.replace("-", "") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+  const isPaid = (bed.paidMonths || []).includes(period);
 
   el("receipt-paper").innerHTML = `
     <div class="receipt-brand">
@@ -1836,11 +1882,12 @@ function openReceiptDialog(roomId, bedIndex) {
     </div>
     <div class="receipt-grid">
       <div class="receipt-cell"><b>Receipt No.</b><span>${receiptNo}</span></div>
-      <div class="receipt-cell"><b>Date</b><span>${now.toLocaleDateString("en-IN")}</span></div>
+      <div class="receipt-cell"><b>Payment date</b><span>${prettyDate(paymentInfo.date)}</span></div>
       <div class="receipt-cell"><b>Tenant</b><span>${esc(bed.name)}</span></div>
       <div class="receipt-cell"><b>Room / Bed</b><span>Room ${esc(room.no)} · Bed ${PGStore.bedLabel(bedIndex, roomId)}</span></div>
       <div class="receipt-cell"><b>Period</b><span>${monthLabel}</span></div>
       <div class="receipt-cell"><b>Status</b><span>${isPaid ? "✅ Paid" : "⏳ Due"}</span></div>
+      <div class="receipt-cell"><b>Transaction reference</b><span>${esc(paymentInfo.utr || "—")}</span></div>
     </div>
     <div class="receipt-amount-box">
       <span>Rent for ${monthLabel}</span>
@@ -1852,7 +1899,7 @@ function openReceiptDialog(roomId, bedIndex) {
   openDlg("dlg-receipt");
 }
 
-function sendWhatsAppReminder(roomId, bedIndex) {
+function sendWhatsAppReminder(roomId, bedIndex, period, shareReceipt) {
   const rooms = PGStore.state().rooms;
   const room = rooms.find((r) => r.id === roomId);
   if (!room) { return; }
@@ -1862,10 +1909,15 @@ function sendWhatsAppReminder(roomId, bedIndex) {
     return;
   }
   const owner = PGStore.state().owner || {};
-  const rent = PGStore.effectiveRent(room, bed);
-  const month = new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+  period = /^\d{4}-(0[1-9]|1[0-2])$/.test(period || "") ? period : monthKey();
+  const rent = PGStore.monthRent(room, bed, period);
+  const month = PGStore.monthLabel(period);
+  const paid = (bed.paidMonths || []).includes(period);
+  const info = (bed.paymentInfo && bed.paymentInfo[period]) || {};
   const upiLine = owner.upiId ? `\n💳 UPI: ${owner.upiId}` : "";
-  const msg = `Hi ${bed.name.split(" ")[0]}, this is a friendly reminder that your rent of ${money(rent)} for ${month} is due.${upiLine}\n\n— ${owner.name || "Your PG Owner"}`;
+  const msg = shareReceipt && paid
+    ? `Hi ${bed.name.split(" ")[0]}, your rent of ${money(rent)} for ${month} is marked paid.${info.date ? "\nPayment date: " + info.date : ""}${info.utr ? "\nReference: " + info.utr : ""}\n\n— ${owner.name || "Your PG Owner"}`
+    : `Hi ${bed.name.split(" ")[0]}, this is a friendly reminder that your rent of ${money(rent)} for ${month} is due.${upiLine}\n\n— ${owner.name || "Your PG Owner"}`;
   const phone = bed.phone.replace(/\D/g, "");
   window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
 }
@@ -1911,8 +1963,19 @@ el("form-resolve-complaint").addEventListener("submit", (e) => {
   e.preventDefault();
   var id = el("form-resolve-complaint").dataset.compId;
   if (!id) return;
+  var existing = PGStore.complaints().find((c) => c.id === id);
+  var roomId = el("rco-room").value;
+  var roomData = PGStore.state().rooms.find((r) => r.id === roomId);
   var syncExp = el("rco-sync-exp").checked;
   var res = PGStore.updateComplaint(id, {
+    title: el("rco-name").value,
+    roomId: roomId,
+    roomNo: roomData ? roomData.no : (existing && roomId === existing.roomId ? existing.roomNo : ""),
+    category: el("rco-cat").value,
+    priority: el("rco-priority").value,
+    note: el("rco-note").value,
+    date: el("rco-date").value,
+    resolvedAt: el("rco-resolved").value,
     status: el("rco-status").value,
     cost: Number(el("rco-cost").value) || 0,
     syncExpense: syncExp
@@ -1942,17 +2005,13 @@ function exportTenantsCsv() {
 }
 
 function exportLedgerCsv() {
-  const rows = [["Tenant", "Room", "Bed", "Month", "Paid"]];
+  const rows = [["Tenant", "Room", "Bed", "Month", "Paid", "Rent amount", "Payment date", "Transaction reference"]];
   PGStore.state().rooms.forEach((room) => {
     room.beds.forEach((bed, i) => {
       if (!bed) { return; }
       const label = PGStore.bedLabel(i, room.id);
-      const months = monthsBetweenJS(
-        bed.joined ? bed.joined.slice(0, 7) : new Date().toISOString().slice(0, 7),
-        new Date().toISOString().slice(0, 7)
-      );
-      months.forEach((m) => {
-        rows.push([bed.name, room.no, label, m, (bed.paidMonths || []).includes(m) ? "Yes" : "No"]);
+      PGStore.ledger(room.id, i).forEach((m) => {
+        rows.push([bed.name, room.no, label, m.month, m.paid ? "Yes" : "No", m.rent, m.paymentDate || "", m.utr || ""]);
       });
     });
   });
@@ -2048,7 +2107,10 @@ document.addEventListener("click", (e) => {
   const roomId = btn.dataset.room;
   const bedIndex = btn.dataset.bed;
 
-  if (act === "add-room") {
+  if (act === "rent-current") {
+    selectedRentMonth = monthKey();
+    renderRent();
+  } else if (act === "add-room") {
     el("form-room").reset();
     openDlg("dlg-room");
   } else if (act === "add-tenant") {
@@ -2078,8 +2140,9 @@ document.addEventListener("click", (e) => {
     commit();
     toast(isPaid ? 'Marked as paid ✓' : 'Payment undone', 'success');
   } else if (act === "add-expense") {
-    el("form-expense").reset();
     openExpenseDialog();
+  } else if (act === "edit-expense") {
+    openExpenseDialog(btn.dataset.exp);
   } else if (act === "del-expense") {
     confirmAsync({ type: 'danger', title: 'Remove expense?', message: 'Remove this expense?', okText: 'Remove', icon: '🗑' }).then(function (ok) {
       if (ok) { PGStore.removeExpense(btn.dataset.exp); commit(); }
@@ -2127,11 +2190,9 @@ document.addEventListener("click", (e) => {
     location.hash = "#rent";
     global.setTimeout(function () { global.PGAnalytics && global.PGAnalytics.renderPaymentHistory && global.PGAnalytics.renderPaymentHistory(); }, 100);
   } else if (act === "add-rate") {
-    closeDlg("dlg-rates");
-    el("ra-label").value = "";
-    el("ra-amt").value = "";
-    el("ra-note").value = "";
-    openDlg("dlg-rate");
+    openRateDialog();
+  } else if (act === "edit-rate") {
+    openRateDialog(btn.dataset.rate);
   } else if (act === "del-rate") {
     PGStore.removeRate(btn.dataset.rate);
     commit();
@@ -2158,13 +2219,13 @@ document.addEventListener("click", (e) => {
     el("tr-err").hidden = true;
     openDlg("dlg-transfer");
   } else if (act === "receipt") {
-    openReceiptDialog(roomId, Number(bedIndex));
+    openReceiptDialog(roomId, Number(bedIndex), btn.dataset.month);
   } else if (act === "wa-remind") {
     sendWhatsAppReminder(roomId, Number(bedIndex));
   } else if (act === "print-receipt") {
     window.print();
   } else if (act === "share-receipt") {
-    if (receiptRef) { sendWhatsAppReminder(receiptRef.roomId, receiptRef.bedIndex); }
+    if (receiptRef) { sendWhatsAppReminder(receiptRef.roomId, receiptRef.bedIndex, receiptRef.period, true); }
   } else if (act === "add-complaint") {
     el("form-complaint").reset();
     el("co-date").value = new Date().toISOString().slice(0, 10);
@@ -2177,6 +2238,22 @@ document.addEventListener("click", (e) => {
     var comp = PGStore.complaints().find((c) => c.id === btn.dataset.comp);
     if (!comp) return;
     el("rco-title").textContent = comp.title;
+    el("rco-name").value = comp.title;
+    el("rco-room").innerHTML = '<option value="">— General / Common area —</option>' +
+      PGStore.state().rooms.map((r) => `<option value="${esc(r.id)}">${esc(r.no)}</option>`).join("");
+    if (comp.roomId && !PGStore.state().rooms.some((r) => r.id === comp.roomId)) {
+      el("rco-room").insertAdjacentHTML("beforeend", `<option value="${esc(comp.roomId)}">${esc(comp.roomNo || "Previous room")}</option>`);
+    }
+    el("rco-room").value = comp.roomId || "";
+    const categorySelect = el("rco-cat");
+    if (!Array.from(categorySelect.options).some((option) => option.value === comp.category)) {
+      categorySelect.insertAdjacentHTML("beforeend", `<option value="${esc(comp.category)}">${esc(comp.category)}</option>`);
+    }
+    categorySelect.value = comp.category;
+    el("rco-priority").value = comp.priority;
+    el("rco-note").value = comp.note || "";
+    el("rco-date").value = comp.date;
+    el("rco-resolved").value = comp.resolvedAt || "";
     el("rco-status").value = comp.status;
     el("rco-cost").value = comp.cost || 0;
     el("rco-sync-exp").checked = true;
@@ -2290,8 +2367,8 @@ el("form-edit-room").addEventListener("submit", (e) => {
   const filled = room.beds.filter(Boolean).length;
 
   /* Validate bed count */
-  if (newBedCount < filled) {
-    showErr("er-err", `Can't reduce to ${newBedCount} beds — ${filled} are occupied.`);
+  if (room.beds.slice(newBedCount).some(Boolean)) {
+    showErr("er-err", "Move tenants out of the beds being removed before reducing the bed count.");
     return;
   }
   if (newBedCount < 1) {
@@ -2354,28 +2431,32 @@ el("form-tenant").addEventListener("submit", (e) => {
 
 el("form-expense").addEventListener("submit", (e) => {
   e.preventDefault();
-  const res = PGStore.addExpense({
+  const expenseId = el("form-expense").dataset.expenseId;
+  const data = {
     category: el("x-cat").value,
     amount: el("x-amt").value,
     date: el("x-date").value,
     note: el("x-note").value
-  });
+  };
+  const res = expenseId ? PGStore.updateExpense(expenseId, data) : PGStore.addExpense(data);
   if (!res.ok) { showErr("x-err", res.error); return; }
   closeDlg("dlg-expense");
-  toast("Expense logged!", "success");
+  toast(expenseId ? "Expense updated!" : "Expense logged!", "success");
   commit();
 });
 
 el("form-rate").addEventListener("submit", (e) => {
   e.preventDefault();
-  const res = PGStore.addRate({
+  const rateId = el("form-rate").dataset.rateId;
+  const data = {
     label: el("ra-label").value,
     amount: el("ra-amt").value,
     note: el("ra-note").value
-  });
+  };
+  const res = rateId ? PGStore.updateRate(rateId, data) : PGStore.addRate(data);
   if (!res.ok) { showErr("ra-err", res.error); return; }
   closeDlg("dlg-rate");
-  toast("Rate added!", "success");
+  toast(rateId ? "Rate updated!" : "Rate added!", "success");
   commit();
 });
 

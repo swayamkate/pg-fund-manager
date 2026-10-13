@@ -86,3 +86,12 @@
   .card, .stat { border-radius: 16px; }
   .tabs .tab.is-active { box-shadow: none; }
 }
+
+/* Review any saved rent month without changing the current dashboard cycle. */
+.rent-period-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.rent-period-controls .field { flex: 0 1 220px; margin: 0; min-width: 0; }
+.rent-period-controls .btn-ghost { margin-bottom: 2px; }
+@media (max-width: 640px) {
+  .rent-period-controls .field { flex: 1 1 180px; }
+  .pay-right { flex-wrap: wrap; }
+}

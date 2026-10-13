@@ -23,6 +23,10 @@
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
+  function monthRent(room, bed, month) {
+    return PGStore.monthRent ? PGStore.monthRent(room, bed, month) : (bed.rent || room.rent || 0);
+  }
+
   /* ================================================================
      1. MONTHLY COLLECTION HEATMAP
      ================================================================ */
@@ -45,11 +49,11 @@
       (room.beds || []).forEach(function (bed) {
         if (!bed) return;
         (bed.paidMonths || []).forEach(function (mk) {
-          var parts = mk.split("-");
+          var info = (bed.paymentInfo && bed.paymentInfo[mk]) || {};
+          var parts = (info.date || (mk + "-01")).split("-");
           if (parseInt(parts[0], 10) === year && parseInt(parts[1], 10) === month + 1) {
-            /* Mark the 1st as payment day (we don't have exact day, so use 1st) */
-            var day = 1;
-            dayMap[day] = (dayMap[day] || 0) + (bed.rent || room.rent || 0);
+            var day = parseInt(parts[2], 10) || 1;
+            dayMap[day] = (dayMap[day] || 0) + monthRent(room, bed, mk);
           }
         });
       });
@@ -150,9 +154,9 @@
       var roomMonthIncome = 0;
       (room.beds || []).forEach(function (bed) {
         if (!bed) return;
-        var rent = bed.rent || room.rent || 0;
         (bed.paidMonths || []).forEach(function (mk) {
           var parts = mk.split("-");
+          var rent = monthRent(room, bed, mk);
           if (parseInt(parts[0], 10) === year) {
             roomIncome += rent;
             if (parseInt(parts[1], 10) === month + 1) {
@@ -261,11 +265,10 @@
       var paidMonths = 0;
       (room.beds || []).forEach(function (bed) {
         if (!bed) return;
-        var rent = bed.rent || room.rent || 0;
         var months = (bed.paidMonths || []).filter(function (mk) {
           return parseInt(mk.split("-")[0], 10) === year;
         });
-        totalRent += rent * months.length;
+        months.forEach(function (mk) { totalRent += monthRent(room, bed, mk); });
         paidMonths += months.length;
       });
       rooms_data.push({
@@ -341,7 +344,7 @@
         tenants.push({
           name: bed.name,
           room: room.no,
-          rent: bed.rent || room.rent || 0,
+          rent: monthRent(room, bed, thisMonth()),
           paidMonths: paidCount,
           totalMonths: monthsSinceJoin,
           ratio: ratio,
@@ -612,9 +615,9 @@
       (room.beds || []).forEach(function (bed) {
         if (!bed) return;
         occupiedBeds++;
-        var rent = bed.rent || room.rent || 0;
+        var rent = monthRent(room, bed, thisMonth());
         var paidCount = (bed.paidMonths || []).length;
-        totalIncome += rent * paidCount;
+        (bed.paidMonths || []).forEach(function (mk) { totalIncome += monthRent(room, bed, mk); });
         totalDeposits += bed.deposit || 0;
         tenantRows.push({
           name: bed.name,
@@ -740,13 +743,14 @@
       (room.beds || []).forEach(function (bed, i) {
         if (!bed) return;
         var months = store.ledger(room.id, i) || [];
-        var rent = bed.rent || room.rent || 0;
-        rent = Math.max(0, Number(rent || 0));
         months.forEach(function (m) {
+          var rent = Math.max(0, Number(m.rent != null ? m.rent : monthRent(room, bed, m.month)) || 0);
           var info = (bed.paymentInfo && bed.paymentInfo[m.month]) || null;
           var dateStr = info ? info.date : '';
           var utrStr = info ? info.utr : '';
           rows.push({
+            roomId: room.id,
+            bedIndex: i,
             tenant: bed.name,
             roomNo: room.no,
             bedNo: store.bedLabel ? store.bedLabel(i, room.id) : (i + 1),
@@ -791,7 +795,10 @@
         '<td><span class="' + paidClass + '">' + paidText + '</span></td>' +
         '<td class="ph-date">' + esc(r.date) + '</td>' +
         '<td class="ph-amount">' + money(r.amount) + '</td>' +
-        '<td class="ph-utr">' + esc(r.utr) + '</td>' +
+        '<td class="ph-utr">' + esc(r.utr) + ' ' +
+          '<button class="link-btn" type="button" data-act="rent-edit-payment" data-room="' + esc(r.roomId) +
+          '" data-bed="' + r.bedIndex + '" data-month="' + esc(r.monthKey) + '" aria-label="Edit ' +
+          esc(r.tenant) + ' payment for ' + esc(r.month) + '">Edit</button></td>' +
         '</tr>';
     });
 
@@ -803,6 +810,7 @@
       '<span class="pht-collected">Collected: <b>' + money(totalCollected) + '</b></span>' +
       '<span class="pht-outstanding">Outstanding: <b>' + money(outstanding) + '</b></span>';
     elTotal.innerHTML = totalHtml;
+    elTotal.setAttribute('colspan', '8');
 
     /* Mobile-friendly compact list */
     var elMobile = document.getElementById('payhist-mobile');
@@ -818,6 +826,9 @@
           '<div class="phm-amount">' + money(r.amount) + '</div>' +
           '<div class="' + paidClass + '">' + paidText + '</div>' +
           (r.utr ? '<div class="phm-utr">' + esc(r.utr) + '</div>' : '') +
+          '<button class="link-btn" type="button" data-act="rent-edit-payment" data-room="' + esc(r.roomId) +
+          '" data-bed="' + r.bedIndex + '" data-month="' + esc(r.monthKey) + '" aria-label="Edit ' +
+          esc(r.tenant) + ' payment for ' + esc(r.month) + '">Edit payment</button>' +
           '</div>';
       });
       elMobile.innerHTML = mobileHtml;
