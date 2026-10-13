@@ -288,3 +288,21 @@ body {
   .sync-ping[data-anim="pulse"] .ping-dot::after,
   .sync-ping[data-anim="blink"] .ping-dot { animation: none; }
 }
+
+/* Teal dashboard refresh */
+:root { --bg: #f3f6f5; --card: #fff; --line: #dfe8e3; --ink: #172c26; --mut: #52675e; --acc: #087f68; --r-lg: 20px; }
+.topbar { padding: 18px 20px; }
+.brand { letter-spacing: -.6px; font-size: 20px; }
+#view { padding-top: 24px; }
+.stat-card { padding: 20px; gap: 6px; }
+.stat-card strong { font-size: 30px; letter-spacing: -1px; }
+.tabbar .tab { padding: 12px 0; }
+.tabbar .tab.is-active { background: color-mix(in srgb, var(--acc) 8%, var(--card)); }
+@media (min-width: 900px) {
+  #view { max-width: 1000px; padding: 36px 32px; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .topbar { padding-left: max(32px, calc((100vw - 936px) / 2)); padding-right: max(32px, calc((100vw - 936px) / 2)); }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #101c19; --card: #182823; --line: #2b4138; --ink: #edf6f1; --mut: #adc5b9; --acc: #65d9b7; --acc-ink: #101c19; }
+}
