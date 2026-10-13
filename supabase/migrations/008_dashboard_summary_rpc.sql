@@ -7,7 +7,11 @@
 -- owner, so RLS scopes every number; the parameter is a cross-check.
 -- Supersedes 005's get_owner_stats (kept for compatibility).
 
-create or replace function get_owner_dashboard_summary(p_owner_id uuid, p_period text default null)
+-- Keep existing JSON/JSONB signatures and grants on partial deployments.
+DO $migration$
+DECLARE
+  existing_type oid;
+  definition text := $definition$create or replace function public.get_owner_dashboard_summary(p_owner_id uuid, p_period text default null)
 returns json
 language sql
 security invoker
@@ -43,7 +47,20 @@ as $$
       where owner_id = p_owner_id
         and deleted_at is null
         and period = coalesce(p_period, to_char(now(), 'YYYY-MM'))) l;
-$$;
+$$;$definition$;
+BEGIN
+  SELECT prorettype INTO existing_type
+  FROM pg_proc
+  WHERE oid = to_regprocedure('public.get_owner_dashboard_summary(uuid,text)');
+  IF existing_type = 'jsonb'::regtype THEN
+    definition := replace(definition, 'returns json', 'returns jsonb');
+    definition := replace(definition, 'json_build_object(', 'jsonb_build_object(');
+  ELSIF existing_type IS NOT NULL AND existing_type <> 'json'::regtype THEN
+    RAISE EXCEPTION 'Unexpected dashboard RPC return type: %', existing_type::regtype;
+  END IF;
+  EXECUTE definition;
+END;
+$migration$;
 
 -- Self-check: exists + invoker-run
 select proname, prosecdef as is_security_definer
