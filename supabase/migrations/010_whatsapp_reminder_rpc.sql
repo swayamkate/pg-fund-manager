@@ -8,7 +8,11 @@
 -- due = ledger due - paid (falls back to the tenant's effective rent when
 -- no ledger row exists yet). Phone normalized to bare digits for wa.me.
 
-create or replace function generate_whatsapp_reminder_payload(p_tenant_id uuid, p_period text default null)
+-- Preserve JSON/JSONB return types and existing grants on partial deployments.
+DO $migration$
+DECLARE
+  existing_type oid;
+  definition text := $definition$create or replace function public.generate_whatsapp_reminder_payload(p_tenant_id uuid, p_period text default null)
 returns json
 language plpgsql
 security invoker
@@ -25,14 +29,14 @@ declare
   v_text     text;
   v_upi      text;
 begin
-  select * into t from tenants where id = p_tenant_id and deleted_at is null;
+  select * into t from tenants where id::text = p_tenant_id::text and deleted_at is null;
   if not found then
     raise exception 'tenant % not found', p_tenant_id using errcode = 'P0002';
   end if;
 
-  select * into prop from properties where id = t.property_id;
+  select * into prop from properties where id::text = t.property_id::text;
   select * into led from rent_ledger
-    where tenant_id = p_tenant_id and period = v_period and deleted_at is null
+    where tenant_id::text = p_tenant_id::text and period = v_period and deleted_at is null
     limit 1;
 
   v_due := case
@@ -64,7 +68,19 @@ begin
     'wa_url',     'https://wa.me/' || v_phone || '?text=' || v_text
   );
 end;
-$$;
+$$;$definition$;
+BEGIN
+  SELECT prorettype INTO existing_type FROM pg_proc
+  WHERE oid = to_regprocedure('public.generate_whatsapp_reminder_payload(uuid,text)');
+  IF existing_type = 'jsonb'::regtype THEN
+    definition := replace(definition, 'returns json', 'returns jsonb');
+    definition := replace(definition, 'json_build_object(', 'jsonb_build_object(');
+  ELSIF existing_type IS NOT NULL AND existing_type <> 'json'::regtype THEN
+    RAISE EXCEPTION 'Unexpected reminder RPC return type: %', existing_type::regtype;
+  END IF;
+  EXECUTE definition;
+END;
+$migration$;
 
 -- Self-check
 select proname, prosecdef as is_security_definer
