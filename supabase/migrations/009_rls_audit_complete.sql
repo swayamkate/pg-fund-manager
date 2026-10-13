@@ -9,13 +9,16 @@
 do $$
 declare
   t text;
+  owner_column text;
 begin
   -- All tables the two apps read/write, including the legacy-only ones.
   foreach t in array array[
     'properties','floors','rooms','beds','tenants','rent_ledger',
     'expenses','complaints','activity','settings','rules','profiles'
   ] loop
-    continue when to_regformat('public.' || t) is null;   -- table absent: skip
+    continue when to_regclass('public.' || t) is null;   -- table absent: skip
+
+    owner_column := CASE WHEN t = 'profiles' THEN 'id' ELSE 'owner_id' END;
 
     execute format('alter table public.%I enable row level security;', t);
     execute format('alter table public.%I force row level security;', t);
@@ -23,30 +26,30 @@ begin
     -- Drop older / looser policies, then apply the strict set.
     execute format('drop policy if exists %I on public.%I', t || '_select_own', t);
     execute format('drop policy if exists %I on public.%I', t || '_insert_own', t);
-    execute format('drop policy if exists %I on public.%I', t || '_update_own', t);
+    execute format('drop policy if exists %I on public.%I', t || '_update_own', t, owner_column);
     execute format('drop policy if exists %I on public.%I', t || '_delete_own', t);
     execute format('drop policy if exists %I on public.%I', t || '_owner_all', t);
 
     execute format($f$
       create policy %I on public.%I for select to authenticated
-      using (owner_id = auth.uid())
-    $f$, t || '_select_own', t);
+      using (%I = auth.uid())
+    $f$, t || '_select_own', t, owner_column);
 
     execute format($f$
       create policy %I on public.%I for insert to authenticated
-      with check (owner_id = auth.uid())
-    $f$, t || '_insert_own', t);
+      with check (%I = auth.uid())
+    $f$, t || '_insert_own', t, owner_column);
 
     execute format($f$
       create policy %I on public.%I for update to authenticated
-      using (owner_id = auth.uid())
-      with check (owner_id = auth.uid())
-    $f$, t || '_update_own', t);
+      using (%I = auth.uid())
+      with check (%I = auth.uid())
+    $f$, t || '_update_own', t, owner_column, owner_column);
 
     execute format($f$
       create policy %I on public.%I for delete to authenticated
-      using (owner_id = auth.uid())
-    $f$, t || '_delete_own', t);
+      using (%I = auth.uid())
+    $f$, t || '_delete_own', t, owner_column);
   end loop;
 end $$;
 

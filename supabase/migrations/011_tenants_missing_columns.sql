@@ -35,7 +35,7 @@ from beds b
 where b.tenant_id = t.id;
 
 -- Self-check: every column below must report exists = true
-select column_name
+select col AS column_name
 from (values ('status'), ('rent_amount'), ('workplace'), ('planned_leave_on'),
              ('collect_day'), ('deposit'), ('id_proof_path')) as want(col)
 where not exists (
