@@ -38,6 +38,14 @@ and loading order. [Setup reference](docs/setup.md) preserves the earlier setup
 notes; some descriptions there refer to older versions. For the database, use
 [Supabase documentation](supabase/README.md).
 
+## Next.js app and database repair
+
+The `pgmanager/` rewrite includes its own database, rent engine, imports, and
+reports. Follow its [quick start](pgmanager/README.md) to run it separately.
+Migration [`013_consolidated_repair.sql`](supabase/migrations/013_consolidated_repair.sql)
+contains repairs for the existing Supabase schema. Merging this code does not
+apply database migrations.
+
 ## Offline regression checks
 
 ```sh
