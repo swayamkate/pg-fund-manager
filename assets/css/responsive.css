@@ -1,0 +1,294 @@
+/* ---------- misc ---------- */
+.skeleton { background: var(--surface-2); border-radius: var(--radius-sm); animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+.table-scroll, .tabs-in { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ----------------------------------------------------------------
+   6. DESKTOP RESPONSIVE
+   ---------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .cols { grid-template-columns: 1fr; }
+  .rooms { grid-template-columns: repeat(2, 1fr); }
+  .imp-example-grid { grid-template-columns: 1fr; }
+}
+
+/* ----------------------------------------------------------------
+   7. MOBILE (≤640px) — app-like shell
+   ---------------------------------------------------------------- */
+@media (max-width: 640px) {
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-size: 14px;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  .wrap { padding: 0 var(--sp-4); }
+
+  /* ---- shell: sidebar becomes hidden, topbar shows brand ---- */
+  .app { display: block; }
+  .sidebar {
+    position: static; width: auto; border: 0;
+  }
+  .sidebar .brand, .sidebar-foot { display: none; }
+  .sidebar-in { display: contents; }
+
+  .app-main { margin-left: 0; }
+
+  /* ---- topbar ---- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 56px;
+    background: color-mix(in srgb, var(--surface) 95%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .topbar-in { height: 56px; padding: 0 12px; justify-content: space-between; }
+  .brand-mobile { display: flex; gap: var(--sp-2); }
+  .sidebar-toggle { display: none !important; }
+  .brand-mobile .brand-mark { width: 32px; height: 32px; border-radius: 10px; }
+  .brand-mobile .brand-text strong { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+  .brand-mobile .brand-text small { display: none; }
+  .topbar-right { gap: 6px; }
+  .topbar-right .btn-ghost { display: none; }
+  .avatar { width: 32px; height: 32px; font-size: 12px; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; }
+
+  /* ---- bottom nav ---- */
+  .tabs {
+    position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+    z-index: 100; padding: 0;
+    background: color-mix(in srgb, var(--surface) 95%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .tabs-in {
+    display: flex; width: 100%; gap: 0; padding: 0;
+    flex-direction: row;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .tabs-in::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1 1 0; min-width: 0; padding: 6px 0 8px;
+    min-height: 60px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    border-radius: 0; font-size: 10px; font-weight: 600;
+    color: var(--faint); scroll-snap-align: center;
+    transition: color .15s ease, background .15s ease;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+  .tab .tab-ico { display: none; }
+  .tab::before {
+    content: ""; display: block; width: 24px; height: 24px;
+    margin-bottom: 1px; opacity: .4; transition: opacity .15s ease, transform .15s ease;
+    font-size: 22px; line-height: 1; text-align: center;
+  }
+  .tab:hover { color: var(--muted); background: transparent; }
+  .tab.is-active { color: var(--brand); background: var(--brand-soft); box-shadow: none; }
+  .tab.is-active::before { opacity: 1; transform: scale(1.1); }
+  .tab.is-active::after {
+    content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 3px; border-radius: 0 0 2px 2px; background: var(--brand);
+  }
+
+  /* Tab icons (emoji) */
+  [data-view="dashboard"]::before { content: "📊"; }
+  [data-view="beds"]::before { content: "🛏️"; }
+  [data-view="tenants"]::before { content: "👤"; }
+  [data-view="rent"]::before { content: "💰"; }
+  [data-view="expenses"]::before { content: "📋"; }
+  [data-view="complaints"]::before { content: "🔧"; }
+  [data-view="owner"]::before { content: "⚙️"; }
+
+  /* ---- main ---- */
+  main.wrap {
+    padding: 68px var(--sp-4) calc(120px + env(safe-area-inset-bottom, 0px));
+    min-height: 100dvh;
+  }
+
+  /* ---- page headers ---- */
+  .page-head { flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); padding-top: 4px; }
+  h1 { font-size: 24px; letter-spacing: -.03em; font-weight: 700; }
+  .sub { font-size: 13px; line-height: 1.4; }
+  .stamp { font-size: 11px; padding: 5px 10px; }
+  .head-actions { width: 100%; }
+  .head-actions .btn-ghost, .head-actions .btn-primary { flex: 1; justify-content: center; }
+
+  /* ---- stats ---- */
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: var(--sp-4); }
+  .stats-3 { grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-2); }
+  .stat { padding: 14px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .stat::after { display: none; }
+  .stat:hover { transform: none; box-shadow: var(--shadow-sm); }
+  .stat-top { margin-bottom: 10px; }
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+  .stat-ico { width: 28px; height: 28px; border-radius: var(--radius-sm); }
+  .stat-value { font-size: 22px; letter-spacing: -.03em; }
+  .stat-note { font-size: 11px; margin-top: 6px; }
+
+  /* ---- cards ---- */
+  .card {
+    padding: var(--sp-4); border-radius: var(--radius-md); margin-bottom: var(--sp-3);
+    box-shadow: var(--shadow-sm);
+  }
+  .card-head { margin-bottom: var(--sp-3); }
+  .card-head h2 { font-size: 15px; font-weight: 660; }
+
+  .cols { grid-template-columns: 1fr; gap: var(--sp-3); }
+
+  /* ---- rooms ---- */
+  .rooms { grid-template-columns: 1fr; gap: 10px; }
+  .room { padding: var(--sp-4); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .room:hover { transform: none; box-shadow: var(--shadow-sm); }
+  .room-head { margin-bottom: var(--sp-3); }
+  .bed { padding: 10px 12px; border-radius: 10px; }
+  .bed b { font-size: 10px; }
+  .bed span { font-size: 12.5px; }
+
+  .feed li { padding: var(--sp-3) 0; gap: 10px; }
+  .feed-body { font-size: 13px; }
+  .feed-body span { font-size: 12px; }
+  .ico { width: 28px; height: 28px; border-radius: 9px; font-size: 12px; }
+
+  .paylist li { padding: 14px 0; }
+  .pay-name { font-size: 13px; }
+  .amount { font-size: 13px; }
+  .stats-3 .stat { padding: 12px; }
+  .stats-3 .stat-value { font-size: 18px; }
+
+  /* ---- tenant cards ---- */
+  .tenant-cards { display: flex; gap: 10px; }
+  .table-card { display: none; }
+  .tcard { padding: var(--sp-4); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .tcard-top { margin-bottom: var(--sp-3); }
+  .tcard-grid { gap: var(--sp-3); font-size: 13px; }
+  .tcard-grid b { font-size: 10px; }
+
+  /* ---- complaints ---- */
+  .complaints-toolbar { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+  .pills-group { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .pills-group::-webkit-scrollbar { display: none; }
+  .comp-card { padding: var(--sp-4); border-radius: 14px; }
+  .comp-title { font-size: 14px; }
+
+  /* ---- owner ---- */
+  .oa-grid { grid-template-columns: 1fr; gap: 10px; }
+  .oa-card { padding: var(--sp-4); border-radius: 14px; gap: var(--sp-3); }
+  .oa-icon { width: 36px; height: 36px; border-radius: 10px; font-size: 16px; }
+  .oa-text b { font-size: 14px; }
+  .oa-text span { font-size: 12px; }
+  .data-stat-card { padding: var(--sp-4); border-radius: 14px; }
+  .data-stat-row { font-size: 13px; }
+  .setup { flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); align-items: stretch; }
+  .setup-actions { width: 100%; }
+  .setup-actions .btn-ghost, .setup-actions .btn-primary { width: 100%; }
+
+  /* ---- buttons: touch targets ---- */
+  .btn-ghost { min-height: 48px; padding: 10px 16px; font-size: 14px; border-radius: var(--radius-md); }
+  .btn-primary { min-height: 52px; font-size: 15px; border-radius: 14px; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 12px; }
+  .link-btn { min-height: 44px; display: inline-flex; align-items: center; }
+  .oa-card, .dd-item, .comp-card .link-btn { min-height: 48px; display: flex; align-items: center; }
+
+  /* ---- tenant profile (mobile) ---- */
+  .pf-head { padding: var(--sp-4) var(--sp-4) 14px; border-bottom: 1px solid var(--border); }
+  .pf-av { width: 42px; height: 42px; font-size: 15px; }
+  .pf-id b { font-size: 15px; }
+  .pf-grid { grid-template-columns: 1fr; gap: 0; padding: 0 var(--sp-4); }
+  .pf-cell { border-top: 1px solid var(--border); padding: 10px 0; }
+  .pf-cell:first-child { border-top: 0; padding-top: 0; }
+  .pf-note { padding: 0 var(--sp-4) var(--sp-3); }
+  .pf-foot { flex-direction: column; align-items: stretch; padding: var(--sp-3) var(--sp-4); gap: var(--sp-2); }
+  .pf-left { flex-direction: column; gap: 6px; }
+  .pf-foot .link-btn { min-height: 44px; padding: 10px 12px; font-size: 13px; font-weight: 550; justify-content: center; }
+  .pf-foot .btn-ghost { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+  .pf-foot .btn-primary { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+  .pf-form { padding: var(--sp-4); }
+  .pf-form h3 { font-size: 16px; margin: 0 0 14px; }
+
+  /* ---- dialogs: fullscreen sheets ---- */
+  .dlg {
+    max-width: 100vw; width: 100%; margin: 0;
+    padding: 0; border-radius: 0;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 200;
+  }
+  .dlg::backdrop {
+    background: rgb(0 0 0 / .6);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .dlg-card {
+    border-radius: 0; border: none;
+    padding: var(--sp-5) var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+    max-height: 100vh; max-height: 100dvh;
+    overflow-y: auto;
+    box-shadow: none;
+    background: var(--surface);
+  }
+  .dlg-card h3 { font-size: 18px; font-weight: 700; margin-bottom: var(--sp-4); }
+  .dlg-sub { font-size: 13px; margin-bottom: var(--sp-4); }
+
+  /* forms on mobile: stacked, roomy */
+  .form-grid { gap: 0; }
+  .field { flex: 1 1 100%; min-width: 0; margin-bottom: var(--sp-4); }
+  .field > span { font-size: 12px; }
+  .field input, .field select, .field textarea { font-size: 16px; min-height: 50px; padding: 13px 15px; border-radius: var(--radius-md); }
+  .field textarea { min-height: 96px; }
+
+  .dlg-foot {
+    position: sticky; bottom: 0; left: 0; right: 0;
+    padding: 14px 0 0; margin-top: var(--sp-3);
+    background: var(--surface);
+    display: flex; gap: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .dlg-foot .btn-ghost, .dlg-foot .btn-primary { flex: 1; min-height: 50px; }
+
+  /* dropdowns */
+  .dd-menu { position: fixed; }
+
+  /* toasts: bottom sheet */
+  #toast-container {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    top: auto; left: 12px; right: 12px;
+    max-width: 100%; align-items: stretch;
+  }
+  .toast { max-width: 100%; border-radius: 14px; padding: 12px 16px; font-size: 13px; box-shadow: var(--shadow-md); }
+
+  /* footer sits above bottom nav */
+  .foot {
+    position: fixed; left: 0; right: 0;
+    bottom: calc(61px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    border-top: 1px solid var(--border);
+  }
+
+  /* import / offboard grids collapse */
+  .ob-calc-grid { grid-template-columns: 1fr; }
+  .receipt-grid { grid-template-columns: 1fr; }
+  .bf-months-grid { grid-template-columns: 1fr 1fr; }
+  .imp-example-grid { grid-template-columns: 1fr; }
+}
+
+/* ----------------------------------------------------------------
+   8. VERY SMALL SCREENS (≤380px)
+   ---------------------------------------------------------------- */
+@media (max-width: 380px) {
+  .tab { font-size: 9px; padding: 4px 0 6px; min-height: 50px; }
+  .tab::before { width: 20px; height: 20px; font-size: 20px; }
+  .stat-value { font-size: 18px; }
+  .stats-3 { grid-template-columns: 1fr 1fr; }
+  .oa-card { padding: 12px 14px; }
+  .oa-icon { width: 32px; height: 32px; }
+  .oa-text b { font-size: 13px; }
+  .oa-text span { font-size: 11px; }
+}

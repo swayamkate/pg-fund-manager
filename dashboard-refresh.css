@@ -1,4 +1,4 @@
-/* Shared dashboard refresh: existing controls and responsive layout stay intact. */
+/* Dashboard palette and compact spacing. Mobile controls retain touch targets. */
 :root, [data-theme="light"] {
   --bg: #f5f9ff;
   --bg-accent: none;
@@ -18,9 +18,9 @@
   --shadow-sm: 0 2px 4px rgb(24 44 71 / .025);
   --shadow-md: 0 8px 28px -16px rgb(24 44 71 / .15);
   --shadow-lg: 0 16px 38px -20px rgb(24 44 71 / .22);
-  --radius-lg: 20px;
-  --sidebar-w: 246px;
-  --topbar-h: 72px;
+  --radius-lg: 14px;
+  --sidebar-w: 220px;
+  --topbar-h: 60px;
 }
 [data-theme="dark"] {
   --bg: #101d30;
@@ -39,15 +39,15 @@
   --brand-grad: linear-gradient(135deg, #63b3f4, #287dc4);
   --ring: rgb(136 201 255 / .22);
 }
-.page-head h1 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -.045em; }
-.page-head { margin-bottom: 28px; align-items: center; }
+.page-head h1 { font-size: clamp(22px, 2.2vw, 28px); letter-spacing: -.045em; }
+.page-head { margin-bottom: 20px; align-items: center; }
 .dashboard-eyebrow { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--brand); text-transform: uppercase; }
-.card { border-radius: 20px; box-shadow: var(--shadow-sm); }
+.card { border-radius: 14px; box-shadow: var(--shadow-sm); }
 .card-head h2 { letter-spacing: -.025em; }
-.stat { border-radius: 18px; box-shadow: var(--shadow-sm); }
+.stat { border-radius: 14px; box-shadow: var(--shadow-sm); }
 .stat::after { display: none; }
-.stat-value { font-size: clamp(24px, 2.7vw, 34px); letter-spacing: -.04em; }
-.stat-ico { border-radius: 12px; width: 38px; height: 38px; }
+.stat-value { font-size: clamp(22px, 2.2vw, 28px); letter-spacing: -.04em; }
+.stat-ico { border-radius: 12px; width: 32px; height: 32px; }
 .stat:hover { transform: none; box-shadow: var(--shadow-md); }
 .stamp { background: var(--surface); border: 1px solid var(--border); padding: 9px 13px; border-radius: 10px; }
 .btn-primary { background-image: none; background-color: var(--brand); color: #fff; box-shadow: none; border-radius: 11px; }
@@ -56,26 +56,29 @@
 .btn-ghost, .icon-btn { box-shadow: none; }
 .table th { background: var(--surface-2); }
 .setup { border: 1px solid var(--border-strong); background: var(--brand-soft); }
-.dashboard-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 24px; }
+.dashboard-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 18px; }
 .dashboard-actions button { display: inline-flex; align-items: center; gap: 8px; }
 .dashboard-actions svg { width: 16px; height: 16px; }
 @media (min-width: 641px) {
   .sidebar { background: var(--surface); color: var(--text); border-right: 1px solid var(--border); }
-  .sidebar-in { padding: 28px 16px 20px; gap: 20px; }
-  .sidebar .brand { padding: 0 8px 20px; border-bottom: 1px solid var(--border); }
+  .sidebar-in { padding: 20px 12px 16px; gap: 16px; }
+  .sidebar .brand { padding: 0 8px 16px; border-bottom: 1px solid var(--border); }
   .sidebar .brand-text small { color: var(--muted); margin-top: 5px; }
   .sidebar .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); box-shadow: none; }
-  .sidebar .tab { color: var(--muted); padding: 12px 14px; border-radius: 10px; margin: 2px 0; }
+  .sidebar .tab { color: var(--muted); padding: 10px 12px; border-radius: 10px; margin: 2px 0; }
   .sidebar .tab .tab-ico { color: var(--faint); }
   .sidebar .tab:hover { background: var(--surface-2); color: var(--text); }
   .sidebar .tab.is-active { background: var(--brand-soft); color: var(--brand); box-shadow: none; }
   .sidebar .tab.is-active .tab-ico { color: var(--brand); }
   .sidebar-foot { color: var(--muted); border-color: var(--border); }
-  main.wrap { padding-top: 36px; }
+  main.wrap { padding-top: 24px; }
   .topbar { backdrop-filter: none; background: var(--surface); }
-  .card { padding: 24px; }
+  .card { padding: 18px; }
   .card.table-card { padding: 0; }
-  .stat { padding: 22px; }
+  .stat { padding: 16px; }
+  .stats { gap: 12px; margin-bottom: 18px; }
+  .card-head { margin-bottom: 16px; }
+  main.wrap { padding-right: 24px; padding-left: 24px; }
 }
 @media (max-width: 640px) {
   .page-head { gap: 12px; align-items: flex-start; margin-bottom: 20px; }
@@ -95,3 +98,16 @@
   .rent-period-controls .field { flex: 1 1 180px; }
   .pay-right { flex-wrap: wrap; }
 }
+
+/* Keep secondary analytics available without extending the initial overview. */
+.dashboard-reports { margin-top: 18px; }
+.dashboard-reports > summary {
+  cursor: pointer; padding: 16px 18px; border: 1px solid var(--border);
+  border-radius: 14px; background: var(--surface); font-weight: 650;
+}
+.dashboard-reports > summary::marker { color: var(--brand); }
+.dashboard-reports > summary span {
+  display: block; margin: 4px 0 0 16px; color: var(--muted);
+  font-size: 12px; font-weight: 400;
+}
+.dashboard-reports[open] > summary { border-color: var(--border-strong); }

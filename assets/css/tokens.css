@@ -1,0 +1,95 @@
+/* ================================================================
+   PG Manager — design system
+   Modern SaaS aesthetic (Vercel / Stripe):
+   - Indigo brand, slate neutrals, emerald/amber/rose status scale
+   - 8px spacing grid + radius scale as design tokens
+   - Layered, soft elevation shadows
+   - Desktop: persistent sidebar + slim topbar
+   - Mobile (≤640px): app-style topbar, bottom nav, sheet dialogs
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   1. DESIGN TOKENS
+   ---------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  /* neutrals — slate scale */
+  --bg: #F7F8FC;
+  --bg-accent: radial-gradient(1100px 420px at 50% -160px, rgba(99, 102, 241, .10) 0%, rgba(99, 102, 241, 0) 70%);
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F9;
+  --surface-3: #E2E8F0;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --text: #0F172A;
+  --muted: #475569;
+  --faint: #64748B;
+
+  /* brand — indigo */
+  --brand: #4F46E5;
+  --brand-hover: #4338CA;
+  --brand-soft: #EEF2FF;
+  --brand-grad: linear-gradient(140deg, #818CF8 0%, #6366F1 48%, #4F46E5 100%);
+
+  /* status — emerald / amber / rose */
+  --green: #059669;
+  --green-soft: #ECFDF5;
+  --amber: #D97706;
+  --amber-soft: #FFFBEB;
+  --red: #E11D48;
+  --red-soft: #FFF1F2;
+
+  /* elevation */
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / .05), 0 1px 1px rgb(15 23 42 / .04);
+  --shadow-md: 0 1px 2px rgb(15 23 42 / .06), 0 4px 8px -2px rgb(15 23 42 / .08), 0 12px 24px -6px rgb(15 23 42 / .08);
+  --shadow-lg: 0 2px 4px rgb(15 23 42 / .06), 0 10px 20px -4px rgb(15 23 42 / .10), 0 28px 56px -12px rgb(15 23 42 / .16);
+  --ring: rgb(79 70 229 / .16);
+  --hairline: inset 0 1px 0 rgb(255 255 255 / .8);
+
+  /* spacing — 8px grid */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 28px; --sp-8: 32px;
+  --sp-9: 36px; --sp-10: 40px; --sp-11: 44px; --sp-12: 48px;
+
+  /* radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* shell */
+  --sidebar-w: 252px;
+  --topbar-h: 62px;
+}
+
+[data-theme="dark"] {
+  --bg: #020617;
+  --bg-accent: radial-gradient(1100px 420px at 50% -180px, rgb(99 102 241 / .14) 0%, rgb(99 102 241 / 0) 70%);
+  --surface: #0F172A;
+  --surface-2: #1E293B;
+  --surface-3: #334155;
+  --border: #1E293B;
+  --border-strong: #334155;
+  --text: #F8FAFC;
+  --muted: #94A3B8;
+  --faint: #64748B;
+
+  --brand: #6366F1;
+  --brand-hover: #818CF8;
+  --brand-soft: #232258;
+  --brand-grad: linear-gradient(140deg, #818CF8 0%, #6366F1 48%, #4F46E5 100%);
+
+  --green: #34D399;
+  --green-soft: #064E3B;
+  --amber: #FBBF24;
+  --amber-soft: #78350F;
+  --red: #FB7185;
+  --red-soft: #881337;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / .5);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / .5), 0 6px 16px -6px rgb(0 0 0 / .6), 0 16px 40px -12px rgb(0 0 0 / .55);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / .5), 0 12px 28px -8px rgb(0 0 0 / .65), 0 40px 80px -24px rgb(0 0 0 / .7);
+  --ring: rgb(99 102 241 / .28);
+  --hairline: inset 0 1px 0 rgb(255 255 255 / .05);
+}
+
