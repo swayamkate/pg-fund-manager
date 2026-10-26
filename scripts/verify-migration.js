@@ -144,7 +144,7 @@ const run2 = migrate(rooms, { tenantsByBed: new Map(run1.tenants.map((t) => [t.b
 check("second run adds 0 tenants / 0 ledger rows", run2.tenants.length === run1.tenants.length && run2.ledger.length === 0 && new Set(run2.tenants.map(t => t.bedId)).size === run1.tenants.length);
 
 console.log("G. refinements present in schema file");
-const s001 = fs.readFileSync("supabase/migrations/001_normalized_schema.sql", "utf8");
+const s001 = fs.readFileSync(require("node:path").join(__dirname, "../supabase/migrations/001_normalized_schema.sql"), "utf8");
 check("tenants.id_type/id_number", /id_type\s+TEXT/.test(s001) && /id_number\s+TEXT/.test(s001));
 check("rent_ledger.reminder_sent_at", /reminder_sent_at\s+TIMESTAMPTZ/.test(s001));
 check("property_id on all normalized tables", (s001.match(/property_id/g) || []).length >= 8);

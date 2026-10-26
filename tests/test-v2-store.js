@@ -1,10 +1,10 @@
 /* Node smoke test — drives the REAL store/db.js + store/sync.js.
  * Supabase mock speaks PostgREST-shaped results ({ data, error } with
  * pg error codes). Asserts state transitions and outbox behavior.
- * Run: node test-v2-store.js
+ * Run: node tests/test-v2-store.js
  */
-import { createDb } from "./store/db.js";
-import { createSync } from "./store/sync.js";
+import { createDb } from "../assets/js/v2/store/db.js";
+import { createSync } from "../assets/js/v2/store/sync.js";
 
 let pass = 0, fail = 0;
 const check = (name, cond, detail = "") => {
@@ -290,7 +290,7 @@ console.log("\n== 11. enterprise layer: realtime merge, removeTenant, batch isol
 {
   // (a) Realtime bridge: remote INSERT/UPDATE rows merge newest-wins; our own
   //     echo is a no-op; remote tombstone propagates. Drives the REAL module.
-  const { createRealtime } = await import("./store/realtime.js");
+  const { createRealtime } = await import("../assets/js/v2/store/realtime.js");
   const storage9 = fakeStorage();
   const db9 = createDb(storage9, null);
   db9.use("acct-9");

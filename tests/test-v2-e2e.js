@@ -9,15 +9,15 @@
  *
  * Needs a service_role key to write/verify/soft-delete without a user session
  * (the anon key is RLS-restricted to a real auth.uid). Usage:
- *   SUPABASE_SERVICE_KEY=<key> node test-v2-e2e.js
+ *   SUPABASE_SERVICE_KEY=<key> node tests/test-v2-e2e.js
  * Read-only steps run regardless; write steps are skipped if no key given.
  */
 
 import { readFileSync } from "node:fs";
-import { createDb } from "./store/db.js";
-import { createSync } from "./store/sync.js";
+import { createDb } from "../assets/js/v2/store/db.js";
+import { createSync } from "../assets/js/v2/store/sync.js";
 
-const cfgText = readFileSync("config.js", "utf8");
+const cfgText = readFileSync(new URL("../config/config.js", import.meta.url), "utf8");
 const URL_ = (cfgText.match(/SUPABASE_URL:\s*"([^"]+)"/) || [])[1];
 const ANON = (cfgText.match(/SUPABASE_ANON_KEY:\s*"([^"]+)"/) || [])[1];
 const SERVICE = process.env.SUPABASE_SERVICE_KEY || "";

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const saved = new Map();
 const context = { window: {}, localStorage: { getItem: (key) => saved.get(key), setItem: (key, value) => saved.set(key, value) } };
-vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, 'store.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../assets/js/core/store.js'), 'utf8'), context);
 const store = context.window.PGStore;
 store.use('historical-issues-test');
 

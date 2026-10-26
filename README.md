@@ -13,7 +13,7 @@ No build step is needed for the main app. From the repository root:
 python3 -m http.server 8080
 ```
 
-Open http://localhost:8080 and sign in. Configure Supabase in `config.js` for
+Open http://localhost:8080 and sign in. Configure Supabase in `config/config.js` for
 real accounts. Never put a service-role key in browser code.
 
 ## Project map
@@ -21,17 +21,23 @@ real accounts. Never put a service-role key in browser code.
 | Path | Contents |
 | --- | --- |
 | `index.html`, `login.html`, `signup.html` | Main dashboard and authentication pages |
-| `app.js` | Dashboard startup, session, and theme |
-| `assets/js/dashboard/` | Dashboard features, forms, rendering, and save pipeline |
-| `styles.css` → `assets/css/` | Shared style entry point and focused stylesheets |
-| `dashboard-refresh.css` | Dashboard palette and compact spacing |
-| `store.js`, `auth.js`, `supabase-storage.js` | Current app data, authentication, and cloud storage |
-| `analytics.js`, `import.js`, `profile.js`, `account.js`, `rent.js` | Additional feature scripts |
+| `assets/js/dashboard/` | Dashboard startup, views, dialogs, and save pipeline |
+| `assets/js/core/` | Authentication, data store, cloud storage, Sheets backup |
+| `assets/js/features/` | Analytics, import, profiles, accounts, and rent |
+| `assets/js/v2/` | Separate v2 app with its store, views, and components |
+| `assets/css/` | Shared and page-specific stylesheets |
+| `assets/images/` | Images and application icons |
+| `config/` | Public browser configuration |
+| `tests/` | Offline regression checks and live backend checks |
+| `scripts/` | Maintenance and migration verification tools |
+| `docs/` | Architecture, archived setup notes, and project backlog |
 | `supabase/` | Database migrations and setup instructions |
-| `apps-script/`, `sheets.js` | Optional Google Sheets backup |
-| `v2.html`, `app2.js`, `store/`, `views/` | Separate v2 app and its data layer |
+| `apps-script/` | Google Sheets backup server |
+| `mp14u/` | Admin page and its assets |
 | `pgmanager/` | Separate Next.js implementation; has its own setup |
-| `test-*.js` | Regression checks |
+
+Page entry points and hosting metadata stay at the root to preserve public URLs.
+`sw.js` stays there so old service-worker registrations can unregister themselves.
 
 See [architecture and editing guide](docs/architecture.md) for module boundaries
 and loading order. [Setup reference](docs/setup.md) preserves the earlier setup
@@ -49,10 +55,12 @@ apply database migrations.
 ## Offline regression checks
 
 ```sh
-node test-historical-payments.js
-node test-expense-edits.js
-node test-complaint-rate-edits.js
+node tests/test-historical-payments.js
+node tests/test-expense-edits.js
+node tests/test-complaint-rate-edits.js
+node tests/test-schema-check.js
+node tests/test-asset-paths.js
 ```
 
-Other schema and end-to-end scripts contact Supabase; read their headers before
+Other end-to-end scripts contact Supabase; read their headers before
 running them against a configured project.

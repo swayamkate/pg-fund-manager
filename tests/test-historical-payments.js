@@ -4,7 +4,7 @@ const fs = require('fs');
 const saved = new Map();
 const context = {window:null,localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v)},Date,console};
 context.window=context;
-vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, 'store.js'),'utf8'),context);
+vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../assets/js/core/store.js'),'utf8'),context);
 const s=context.PGStore;
 s.use('historical-test');
 const current=s.monthKey();
