@@ -10,7 +10,7 @@ const context = vm.createContext({
     setItem: (key, value) => records.set(key, value)
   }
 });
-vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, 'store.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(require('node:path').join(__dirname, '../assets/js/core/store.js'), 'utf8'), context);
 const store = context.window.PGStore;
 store.use('expense-edits');
 store.setProperty('Sunrise PG');

@@ -27,10 +27,10 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="styles.css?v=29" />
-<link rel="stylesheet" href="manage.css?v=29" />
-<link rel="stylesheet" href="analytics.css?v=29" />
-<link rel="stylesheet" href="dashboard-refresh.css?v=29" />
+<link rel="stylesheet" href="assets/css/styles.css?v=29" />
+<link rel="stylesheet" href="assets/css/manage.css?v=29" />
+<link rel="stylesheet" href="assets/css/analytics.css?v=29" />
+<link rel="stylesheet" href="assets/css/dashboard-refresh.css?v=29" />
 <style>
 html.auth-pending body{visibility:hidden}
 /* Loading skeleton — shown while JS boots */
@@ -44,11 +44,11 @@ html.auth-pending body{visibility:hidden}
 <!-- Smart import: OCR for images and PDF text extraction -->
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="config.js?v=29"></script>
-<script src="supabase-storage.js?v=29"></script>
-<script src="auth.js?v=29"></script>
-<script src="store.js?v=29"></script>
-<script src="sheets.js?v=29"></script>
+<script src="config/config.js?v=29"></script>
+<script src="assets/js/core/supabase-storage.js?v=29"></script>
+<script src="assets/js/core/auth.js?v=29"></script>
+<script src="assets/js/core/store.js?v=29"></script>
+<script src="assets/js/core/sheets.js?v=29"></script>
 <script>
   // Unregister any old service workers that may be serving stale cache.
   // SW is disabled — all files load fresh from the network every time.
@@ -1101,7 +1101,7 @@ html.auth-pending body{visibility:hidden}
   </div>
 </dialog>
 
-<script src="analytics.js?v=29"></script>
+<script src="assets/js/features/analytics.js?v=29"></script>
 <script src="assets/js/dashboard/core.js?v=29"></script>
 <script src="assets/js/dashboard/dashboard.js?v=29"></script>
 <script src="assets/js/dashboard/complaints.js?v=29"></script>
@@ -1113,10 +1113,10 @@ html.auth-pending body{visibility:hidden}
 <script src="assets/js/dashboard/actions.js?v=29"></script>
 <script src="assets/js/dashboard/forms.js?v=29"></script>
 <script src="assets/js/dashboard/navigation.js?v=29"></script>
-<script src="app.js?v=29"></script>
-<script src="import.js?v=29"></script>
-<script src="profile.js?v=29"></script>
-<script src="account.js?v=29"></script>
-<script src="rent.js?v=29"></script>
+<script src="assets/js/dashboard/app.js?v=29"></script>
+<script src="assets/js/features/import.js?v=29"></script>
+<script src="assets/js/features/profile.js?v=29"></script>
+<script src="assets/js/features/account.js?v=29"></script>
+<script src="assets/js/features/rent.js?v=29"></script>
 </body>
 </html>

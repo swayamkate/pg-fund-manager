@@ -17,7 +17,7 @@ global.CustomEvent = class {
 };
 
 /* ---- load the REAL module ---- */
-require("./supabase-storage.js");
+require("../assets/js/core/supabase-storage.js");
 const S = global.SupabaseStorage;
 
 /* ---- event capture: full DOM-ish bus (addEventListener + dispatchEvent) ---- */
@@ -91,8 +91,8 @@ function injectClient(mock) {
 function reset() {
   delete global.PGAuth;
   /* Re-require the module to reset internal state. */
-  delete require.cache[require.resolve("./supabase-storage.js")];
-  require("./supabase-storage.js");
+  delete require.cache[require.resolve("../assets/js/core/supabase-storage.js")];
+  require("../assets/js/core/supabase-storage.js");
   return global.SupabaseStorage;
 }
 

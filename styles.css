@@ -1,7 +1,0 @@
-/* Shared style entry point. Keep imports in cascade order. */
-@import url("assets/css/tokens.css?v=29");
-@import url("assets/css/base.css?v=29");
-@import url("assets/css/layout.css?v=29");
-@import url("assets/css/components.css?v=29");
-@import url("assets/css/management.css?v=29");
-@import url("assets/css/responsive.css?v=29");
