@@ -99,6 +99,7 @@
       </div>
 
       <p class="auth2-ok" id="confirm-note" role="status" hidden></p>
+      <p class="auth2-note" id="mode-note" role="status" hidden></p>
 
       <form id="signup-form" class="auth2-form" novalidate>
         <div class="auth2-field">
@@ -204,6 +205,14 @@
     error.hidden = false;
     busy(false);
     if (focusOn) { focusOn.focus(); }
+  }
+
+  /* No database in this build: say so rather than quietly keeping the account
+     in this browser only. */
+  if (PGAuth.mode === "local") {
+    var modeNote = document.getElementById("mode-note");
+    modeNote.textContent = "This site is not connected to a database yet, so this login is created in this browser only.";
+    modeNote.hidden = false;
   }
 
   PGAuth.needsBootstrap().then(function (first) {

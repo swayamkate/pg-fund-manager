@@ -479,6 +479,19 @@
 
   function fail(message) { return { ok: false, error: message }; }
 
+  /* Transport failures arrive as "Failed to fetch" / "Load failed", which
+     tells an owner nothing. The usual causes, in order: the project was
+     paused or deleted, the deployed config still points at an old project, or
+     the key is wrong — all of them say so here instead of leaking the raw
+     TypeError. */
+  function reachError(err) {
+    var text = (err && err.message) ? String(err.message) : "";
+    if (/failed to fetch|load failed|networkerror|network request failed|fetch failed/i.test(text)) {
+      return "Cannot reach the sign-in database. The site's SUPABASE_URL / key may be out of date, or the Supabase project is paused or deleted.";
+    }
+    return text || "Could not reach Supabase.";
+  }
+
   /* ---------- api ---------- */
 
   var PGAuth = {
@@ -535,7 +548,7 @@
             password: pw,
             options: { data: { full_name: name, role: role } }
           }).then(function (res) {
-            if (res.error) { return fail(res.error.message); }
+            if (res.error) { return fail(reachError(res.error)); }
             /* Auto-create profile row */
             if (res.data && res.data.user) {
               client.from("profiles").upsert({
@@ -555,7 +568,7 @@
             }
             return { ok: true, needsConfirm: !(res.data && res.data.session) };
           }, function (err) {
-            return fail(err && err.message ? err.message : "Could not reach Supabase.");
+            return fail(reachError(err));
           });
         }).catch(function () {
           return client.auth.signUp({
@@ -563,10 +576,10 @@
             password: pw,
             options: { data: { full_name: name, role: "staff" } }
           }).then(function (res) {
-            if (res.error) { return fail(res.error.message); }
+            if (res.error) { return fail(reachError(res.error)); }
             return { ok: true, needsConfirm: !(res.data && res.data.session) };
           }, function (err) {
-            return fail(err && err.message ? err.message : "Could not reach Supabase.");
+            return fail(reachError(err));
           });
         });
       }
@@ -637,10 +650,10 @@
       if (client) {
         return client.auth.signInWithPassword({ email: id, password: pw })
           .then(function (res) {
-            if (res.error) { return fail(res.error.message); }
+            if (res.error) { return fail(reachError(res.error)); }
             return { ok: true, name: nameFromUser(res.data ? res.data.user : null) };
           }, function (err) {
-            return fail(err && err.message ? err.message : "Could not reach Supabase.");
+            return fail(reachError(err));
           });
       }
 

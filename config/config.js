@@ -1,41 +1,44 @@
 /* PG Manager — configuration
 
-   Supabase (sign-in and sign-up):
-     Project Settings → API → Project URL  and  Project API keys → anon public
+   THIS FILE IS GENERATED AT BUILD TIME. Do not paste keys into it.
 
-   These are filled in, so accounts live in Supabase rather than in the browser.
-   Sign in with your EMAIL and password. New accounts are controlled from the
-   Supabase dashboard: Authentication → Providers → Email → "Allow new users to
-   sign up". Turn that OFF and nobody can create a login without you.
+   Cloudflare Pages runs `node scripts/build-config.mjs` before uploading, which
+   rewrites this file from the project's build environment variables:
 
-   Usernames are claimed through the profiles table in supabase/schema.sql.
-   Run that file once in the SQL editor or the username field will say so.
+     SUPABASE_URL        https://<project-ref>.supabase.co
+     SUPABASE_ANON_KEY   the "anon public" key, or a newer sb_publishable_… key
+     SHEETS_URL          optional — Apps Script /exec URL for sheet backup
+     SHEETS_TOKEN        optional — must match TOKEN inside that script
 
-   The anon key is meant to be public and shipped in the browser — access is
-   controlled by Row Level Security. NEVER put the service_role key in this file.
+   Set those in Pages → Settings → Environment variables for Production AND
+   Preview, with `node scripts/build-config.mjs` as the build command. The
+   generator refuses to build when they are missing, so a deploy can no longer
+   ship a site that points at a database that has moved or gone away.
 
-   Leaving SUPABASE_URL and SUPABASE_ANON_KEY empty drops the site back to
-   browser-only accounts, which is useful for local testing.
+   Which key is safe here?
+   -----------------------
+   The anon / publishable key is DESIGNED to be public: it only identifies the
+   project, and Row Level Security decides what the signed-in user can read.
+   The service_role / sb_secret_ key bypasses RLS entirely — it must never
+   appear here, in the repo, or in the browser.
 
-   Google Sheets backup:
-     SHEETS_URL is the /exec address of the Apps Script web app in
-     apps-script/Code.gs. SHEETS_TOKEN must match the TOKEN inside that script.
+   Leaving both values empty is a supported local mode: auth.js falls back to
+   browser-only accounts, which is handy for offline development and is NOT
+   suitable for real users. The login page says so when it is in that mode.
 
-   The Sheets values in this file are public. That token only keeps random
-   crawlers out; it is not a password, because anyone reading the page source
-   can see it.
+   The database side is one file: supabase/fresh-project.sql. Run it once in a
+   new project's SQL Editor and the tables, RLS policies and sign-up bootstrap
+   trigger all match what assets/js/core/*.js calls.
+
+   Google Sheets backup: SHEETS_URL and SHEETS_TOKEN are visible in the page
+   source of any static site. That token keeps crawlers out; it is not a
+   password. Anyone who reads the source can reach the sheet.
 */
 window.PG_CONFIG = {
-  /* Supabase — PRIMARY database for all data.
-     1. Go to https://supabase.com/dashboard → New Project
-     2. Go to Settings → API → Copy Project URL and anon key
-     3. Go to SQL Editor → paste supabase/schema.sql → Run
-     4. Paste your values below */
-  SUPABASE_URL: "https://lkuuwoocxchjisodegur.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXV3b29jeGNoamlzb2RlZ3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzU5MjMsImV4cCI6MjEwMTUxMTkyM30.dGLxbkGIOfJ6Mo3BPKIEZZ6mjVZe3m1H56oaQam95KA",
+  SUPABASE_URL: "",
+  SUPABASE_ANON_KEY: "",
 
-  /* Google Sheets — optional BACKUP only.
-     Leave empty to disable. */
+  /* Optional Google Sheets backup. Empty = disabled. */
   SHEETS_URL: "",
   SHEETS_TOKEN: ""
 };

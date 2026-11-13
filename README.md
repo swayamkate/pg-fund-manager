@@ -13,8 +13,17 @@ No build step is needed for the main app. From the repository root:
 python3 -m http.server 8080
 ```
 
-Open http://localhost:8080 and sign in. Configure Supabase in `config/config.js` for
-real accounts. Never put a service-role key in browser code.
+Open http://localhost:8080 and sign in. With `config/config.js` empty the site runs
+in browser-only mode, and the login page says so; for real accounts, generate the
+file from your project's values instead of editing it:
+
+```sh
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<anon or publishable key> \
+  node scripts/build-config.mjs
+```
+
+Never put a service-role or `sb_secret_` key in browser code — the generator
+rejects one.
 
 ## Project map
 
@@ -43,6 +52,27 @@ See [architecture and editing guide](docs/architecture.md) for module boundaries
 and loading order. [Setup reference](docs/setup.md) preserves the earlier setup
 notes; some descriptions there refer to older versions. For the database, use
 [Supabase documentation](supabase/README.md).
+
+## Deploy
+
+Cloudflare Pages builds this repository from git, so a push is the deploy.
+Settings → Build configuration:
+
+```
+Build command:            node scripts/build-config.mjs
+Build output directory:   .
+```
+
+Environment variables, for **Production and Preview**: `SUPABASE_URL`,
+`SUPABASE_ANON_KEY` (anon public / `sb_publishable_…`), optionally `SHEETS_URL`
+and `SHEETS_TOKEN`. The build refuses to produce a site that points at nothing,
+so a deploy can no longer ship a config for a database that has moved or been
+deleted. `ALLOW_LOCAL_MODE=1` overrides that, deliberately, for browser-only
+builds.
+
+For a new Supabase project, run [`supabase/fresh-project.sql`](supabase/fresh-project.sql)
+once in its SQL Editor: tables, RLS policies and the sign-up bootstrap trigger
+all match what `assets/js/core/*.js` calls.
 
 ## Next.js app and database repair
 

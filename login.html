@@ -102,6 +102,7 @@
 
       <p class="auth2-ok" id="created" role="status" hidden>Account created! Sign in below.</p>
       <p class="auth2-note" id="reason" role="status" hidden></p>
+      <p class="auth2-note" id="mode-note" role="status" hidden></p>
 
       <form id="login-form" class="auth2-form" novalidate>
         <div class="auth2-field">
@@ -235,6 +236,14 @@
     var note = document.getElementById("reason");
     note.textContent = REASONS[out[1]];
     note.hidden = false;
+  }
+
+  /* No database in this build: say so rather than quietly keeping the account
+     in this browser only. */
+  if (PGAuth.mode === "local") {
+    var modeNote = document.getElementById("mode-note");
+    modeNote.textContent = "This site is not connected to a database yet, so accounts are stored in this browser only.";
+    modeNote.hidden = false;
   }
 
   PGAuth.needsBootstrap().then(function (first) {
